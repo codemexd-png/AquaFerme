@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../features/auth/screens/splash_view.dart';
+import '../../features/screens/splash_screen.dart';
 // Les imports pour Login et Home seront ajoutés dès qu'on créera ces fichiers
 
 final GoRouter appRouter = GoRouter(
