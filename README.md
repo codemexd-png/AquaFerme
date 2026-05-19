@@ -16,12 +16,14 @@ Pour lancer l'application localement sur votre émulateur ou appareil physique s
    flutter pub get
 
 2. **Architecture du projet :**
+
 ---
 
 ## 📁 Structure du Projet & Attribution des Rôles
 
 Voici l'organisation des fichiers et qui est responsable de chaque partie pour le développement :
 
+```text
 lib/
 ├── main.dart                          # 🛠️ Ibrahim (Point d'entrée & initialisation)
 │
@@ -58,3 +60,4 @@ lib/
     ├── stat_card.dart                 # 👩‍💻 Grâce (Tuiles KPIs du Dashboard)
     ├── pond_card.dart                 # 👩‍💻 Grâce (Composant visuel des étangs)
     └── occupation_gauge.dart          # 👩‍💻 Grâce (Composant Jauge circulaire personnalisé)
+```
