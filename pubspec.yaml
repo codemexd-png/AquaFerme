@@ -1,0 +1,27 @@
+name: aquaproject_mobile
+description: "Application mobile de gestion pour la ferme piscicole AquaTrack."
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.2.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Navigation officielle recommandée
+  go_router: ^14.0.0
+
+  # Gestion d'état pour les mocks locaux et le statut GPS
+  provider: ^6.1.0
+
+  # Géolocalisation & Permissions (Cœur de tes tâches de vendredi)
+  geolocator: ^11.0.0
+  permission_handler: ^11.3.0
+
+flutter:
+  uses-material-design: true
+  # N'oublie pas d'activer le dossier assets pour les mocks de Lyly et tes icônes
+  assets:
+    - assets/mocks/

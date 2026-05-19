@@ -1,0 +1,24 @@
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import '../../features/auth/screens/splash_view.dart';
+// Les imports pour Login et Home seront ajoutés dès qu'on créera ces fichiers
+
+final GoRouter appRouter = GoRouter(
+  initialLocation: '/',
+  routes: [
+    GoRoute(
+      path: '/',
+      builder: (context, state) => const SplashView(),
+    ),
+    /*  les routes pour le login et la home  
+    GoRoute(
+      path: '/login',
+      builder: (context, state) => const LoginView(),
+    ),
+    GoRoute(
+      path: '/home',
+      builder: (context, state) => const HomeView(),
+    ),
+    */
+  ],
+);
