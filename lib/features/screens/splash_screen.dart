@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class SplashView extends StatefulWidget {
   const SplashView({super.key});
@@ -75,6 +76,12 @@ class _SplashViewState extends State<SplashView> {
                 ),
 
                 const SizedBox(height: 24),
+                FilledButton.icon(
+                  onPressed: () => context.go('/planning'),
+                  icon: const Icon(Icons.arrow_forward),
+                  label: const Text('Acceder aux ecrans Lyly'),
+                ),
+                const SizedBox(height: 16),
               ],
             ),
           ),
