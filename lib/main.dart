@@ -17,5 +17,5 @@ class MyApp extends StatelessWidget {
       routerConfig: appRouter,
       theme: AppTheme.lightTheme, // 2. Branche le thème ici !
     );
-  }
+  }   
 }
