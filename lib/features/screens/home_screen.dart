@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart'; // 🧠 Ajouté pour centraliser toute la navigation
 
-// Pages utilisées dans la tabBar et les cartes
-import 'pond_list_screen.dart';
-import 'occupancy_screen.dart';
-import 'dam_screen.dart';
+// Widget réutilisable conservé
 import '../../widgets/stat_card.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -18,7 +16,7 @@ class HomeScreen extends StatelessWidget {
       // BARRE DU HAUT
       // =========================
       appBar: AppBar(
-        automaticallyImplyLeading: false, // enlève la flèche retour
+        automaticallyImplyLeading: false, // Enlève la flèche retour
         backgroundColor: const Color(0xFF0D47A1),
         centerTitle: true,
         title: const Row(
@@ -35,11 +33,15 @@ class HomeScreen extends StatelessWidget {
             ),
           ],
         ),
-        actions: const [
-          Icon(Icons.location_off, color: Colors.redAccent),
-          SizedBox(width: 14),
-          Icon(Icons.settings, color: Colors.white),
-          SizedBox(width: 12),
+        actions: [
+          const Icon(Icons.location_off, color: Colors.redAccent),
+          const SizedBox(width: 14),
+          IconButton(
+            icon: const Icon(Icons.settings, color: Colors.white),
+            onPressed: () => context
+                .push('/settings'), // Redirection vers ton profil/paramètres
+          ),
+          const SizedBox(width: 12),
         ],
       ),
 
@@ -114,7 +116,7 @@ class HomeScreen extends StatelessWidget {
           const SizedBox(height: 25),
 
           // =========================
-          // TACHES DU JOUR
+          // TÂCHES DU JOUR
           // =========================
           const Text(
             'Tâches du jour',
@@ -145,7 +147,7 @@ class HomeScreen extends StatelessWidget {
           const SizedBox(height: 25),
 
           // =========================
-          // ACCES RAPIDE
+          // ACCÈS RAPIDE
           // =========================
           const Text(
             'Accès rapide',
@@ -169,74 +171,31 @@ class HomeScreen extends StatelessWidget {
                 title: 'Étangs A',
                 subtitle: '7 étangs • 900 m²',
                 color: const Color(0xFF1976D2),
-                onTap: () {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          const PondListScreen(initialCategory: 'A'),
-                    ),
-                  );
-                },
+                onTap: () => context.push('/pond-list?category=A'),
               ),
-
               _QuickCard(
                 title: 'Étangs B',
                 subtitle: '5 étangs • 600 m²',
                 color: const Color(0xFF009688),
-                onTap: () {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          const PondListScreen(initialCategory: 'B'),
-                    ),
-                  );
-                },
+                onTap: () => context.push('/pond-list?category=B'),
               ),
-
               _QuickCard(
                 title: 'Étangs C',
                 subtitle: '3 étangs • 150 m²',
                 color: const Color(0xFF43A047),
-                onTap: () {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          const PondListScreen(initialCategory: 'C'),
-                    ),
-                  );
-                },
+                onTap: () => context.push('/pond-list?category=C'),
               ),
-
               _QuickCard(
                 title: 'Étangs D',
                 subtitle: '2 étangs • 400 m²',
                 color: const Color(0xFF5E35B1),
-                onTap: () {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          const PondListScreen(initialCategory: 'D'),
-                    ),
-                  );
-                },
+                onTap: () => context.push('/pond-list?category=D'),
               ),
-
               _QuickCard(
                 title: 'Barrage',
                 subtitle: 'Suivi du niveau d’eau',
                 color: const Color(0xFF1565C0),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const DamScreen(),
-                    ),
-                  );
-                },
+                onTap: () => context.push('/dam'),
               ),
             ],
           ),
@@ -251,27 +210,16 @@ class HomeScreen extends StatelessWidget {
         selectedItemColor: const Color(0xFF0D47A1),
         unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.fixed,
-
         onTap: (index) {
           if (index == 1) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const PondListScreen(),
-              ),
-            );
+            context.go(
+                '/pond-list'); // Utilisation de .go() pour la barre principale
           }
-
           if (index == 4) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const OccupancyScreen(),
-              ),
-            );
+            context.go(
+                '/occupancy'); // Utilisation de .go() pour la barre principale
           }
         },
-
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.dashboard),
@@ -329,7 +277,7 @@ class HomeScreen extends StatelessWidget {
 }
 
 // =========================
-// CARTE TACHE
+// CARTE TÂCHE
 // =========================
 class _TaskCard extends StatelessWidget {
   final String title;
@@ -364,7 +312,6 @@ class _TaskCard extends StatelessWidget {
         children: [
           Icon(Icons.task_alt, color: color),
           const SizedBox(width: 12),
-
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -383,7 +330,6 @@ class _TaskCard extends StatelessWidget {
               ],
             ),
           ),
-
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             decoration: BoxDecoration(
@@ -406,7 +352,7 @@ class _TaskCard extends StatelessWidget {
 }
 
 // =========================
-// CARTE ACCES RAPIDE
+// CARTE ACCÈS RAPIDE
 // =========================
 class _QuickCard extends StatelessWidget {
   final String title;
@@ -461,6 +407,4 @@ class _QuickCard extends StatelessWidget {
       ),
     );
   }
-
-  
 }

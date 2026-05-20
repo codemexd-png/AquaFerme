@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart'; // 🧠 Ajouté pour utiliser context.push()
 
 import 'home_screen.dart';
 import 'occupancy_screen.dart';
@@ -20,8 +21,8 @@ class PondListScreen extends StatefulWidget {
 class _PondListScreenState extends State<PondListScreen> {
   late String selectedCategory;
 
+  // Liste temporaire locale sous forme de Maps
   final List<Map<String, dynamic>> ponds = [
-
     // ================= A =================
     {
       'name': 'Étang A1',
@@ -200,7 +201,7 @@ class _PondListScreenState extends State<PondListScreen> {
       backgroundColor: const Color(0xFFF4F8FB),
 
       // =========================
-      // APPBAR SANS FLECHE RETOUR
+      // APPBAR SANS FLÈCHE RETOUR
       // =========================
       appBar: AppBar(
         automaticallyImplyLeading: false,
@@ -213,7 +214,8 @@ class _PondListScreenState extends State<PondListScreen> {
             SizedBox(width: 8),
             Text(
               'AquaTrack',
-              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              style:
+                  TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
             ),
           ],
         ),
@@ -290,7 +292,6 @@ class _PondListScreenState extends State<PondListScreen> {
         selectedItemColor: const Color(0xFF0D47A1),
         unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.fixed,
-
         onTap: (index) {
           if (index == 0) {
             Navigator.pushReplacement(
@@ -306,13 +307,15 @@ class _PondListScreenState extends State<PondListScreen> {
             );
           }
         },
-
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: 'Tableau'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.dashboard), label: 'Tableau'),
           BottomNavigationBarItem(icon: Icon(Icons.waves), label: 'Étangs'),
           BottomNavigationBarItem(icon: Icon(Icons.science), label: 'Qualité'),
-          BottomNavigationBarItem(icon: Icon(Icons.calendar_month), label: 'Planning'),
-          BottomNavigationBarItem(icon: Icon(Icons.pie_chart), label: 'Occupation'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.calendar_month), label: 'Planning'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.pie_chart), label: 'Occupation'),
         ],
       ),
     );
@@ -350,7 +353,7 @@ class _PondListScreenState extends State<PondListScreen> {
 }
 
 // =========================
-// CARTE ETANG
+// CARTE ÉTANG
 // =========================
 class _PondCard extends StatelessWidget {
   final String name;
@@ -378,20 +381,16 @@ class _PondCard extends StatelessWidget {
     return InkWell(
       borderRadius: BorderRadius.circular(20),
       onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => PondDetailScreen(
-              name: name,
-              category: category,
-              surface: surface,
-              fish: fish,
-              weight: weight,
-              percent: percent,
-              color: color,
-            ),
-          ),
-        );
+        // Utilisation de GoRouter pour naviguer proprement avec l'identifiant unique
+        context.push('/pond/$name', extra: {
+          'name': name,
+          'category': category,
+          'surface': surface,
+          'fish': fish,
+          'weight': weight,
+          'percent': percent,
+          'color': color,
+        });
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 14),
@@ -407,7 +406,6 @@ class _PondCard extends StatelessWidget {
             ),
           ],
         ),
-
         child: Row(
           children: [
             // CODE A1, A2, B1...
@@ -461,7 +459,7 @@ class _PondCard extends StatelessWidget {
               ),
             ),
 
-            // POURCENTAGE EN ROND COMME AU DEBUT
+            // POURCENTAGE EN ROND
             OccupationGauge(
               percent: percent,
               color: color,
