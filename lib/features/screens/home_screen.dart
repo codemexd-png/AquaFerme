@@ -211,14 +211,15 @@ class HomeScreen extends StatelessWidget {
         unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.fixed,
         onTap: (index) {
-          if (index == 1) {
-            context.go(
-                '/pond-list'); // Utilisation de .go() pour la barre principale
-          }
-          if (index == 4) {
-            context.go(
-                '/occupancy'); // Utilisation de .go() pour la barre principale
-          }
+          if (index == 0) context.go('/home');
+
+          if (index == 1) context.go('/pond-list');
+
+          if (index == 2) context.go('/quality');
+
+          if (index == 3) context.go('/planning');
+
+          if (index == 4) context.go('/occupancy');
         },
         items: const [
           BottomNavigationBarItem(

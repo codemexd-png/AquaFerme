@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'home_screen.dart';
-import 'pond_list_screen.dart';
+import 'package:go_router/go_router.dart';
 import '../../widgets/occupation_gauge.dart';
 
 class OccupancyScreen extends StatelessWidget {
@@ -159,25 +158,16 @@ class OccupancyScreen extends StatelessWidget {
         type: BottomNavigationBarType.fixed,
 
         onTap: (index) {
-          // Dashboard
-          if (index == 0) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const HomeScreen(),
-              ),
-            );
-          }
 
-          // Etangs
-          if (index == 1) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const PondListScreen(),
-              ),
-            );
-          }
+          if (index == 0) context.go('/home');
+
+          if (index == 1) context.go('/pond-list');
+
+          if (index == 2) context.go('/quality');
+
+          if (index == 3) context.go('/planning');
+
+          if (index == 4) context.go('/occupancy');
         },
 
         items: const [

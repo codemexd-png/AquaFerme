@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart'; // 🧠 Ajouté pour utiliser context.push()
 
-import 'home_screen.dart';
-import 'occupancy_screen.dart';
-import 'pond_detail_screen.dart';
 import '../../widgets/occupation_gauge.dart';
 
 class PondListScreen extends StatefulWidget {
@@ -252,18 +249,20 @@ class _PondListScreenState extends State<PondListScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
+
               Text(
-                selectedCategory == 'Tous'
-                    ? '17 étangs'
-                    : 'Étangs $selectedCategory',
+                '${filteredPonds.length} étangs',
                 style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const Text(
-                '6900 poissons',
-                style: TextStyle(color: Colors.grey),
+
+              Text(
+                '${filteredPonds.fold(0, (sum, p) => sum + (p['fish'] as int))} poissons',
+                style: const TextStyle(
+                  color: Colors.grey,
+                ),
               ),
             ],
           ),
@@ -293,19 +292,15 @@ class _PondListScreenState extends State<PondListScreen> {
         unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.fixed,
         onTap: (index) {
-          if (index == 0) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => const HomeScreen()),
-            );
-          }
+          if (index == 0) context.go('/home');
 
-          if (index == 4) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => const OccupancyScreen()),
-            );
-          }
+          if (index == 1) context.go('/pond-list');
+
+          if (index == 2) context.go('/quality');
+
+          if (index == 3) context.go('/planning');
+
+          if (index == 4) context.go('/occupancy');
         },
         items: const [
           BottomNavigationBarItem(
