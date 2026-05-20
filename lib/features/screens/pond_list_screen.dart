@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'home_screen.dart';
 import 'occupancy_screen.dart';
 import 'pond_detail_screen.dart';
+import '../../widgets/occupation_gauge.dart';
 
 class PondListScreen extends StatefulWidget {
   final String initialCategory;
@@ -461,28 +462,11 @@ class _PondCard extends StatelessWidget {
             ),
 
             // POURCENTAGE EN ROND COMME AU DEBUT
-            SizedBox(
-              width: 58,
-              height: 58,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  CircularProgressIndicator(
-                    value: percent / 100,
-                    strokeWidth: 5,
-                    backgroundColor: Colors.grey.shade200,
-                    color: color,
-                  ),
-                  Text(
-                    '${percent.toInt()}%',
-                    style: TextStyle(
-                      color: color,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              ),
+            OccupationGauge(
+              percent: percent,
+              color: color,
+              size: 58,
+              strokeWidth: 5,
             ),
           ],
         ),

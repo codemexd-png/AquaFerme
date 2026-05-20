@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'pond_list_screen.dart';
 import 'occupancy_screen.dart';
 import 'dam_screen.dart';
+import '../../widgets/stat_card.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -83,25 +84,25 @@ class HomeScreen extends StatelessWidget {
             mainAxisSpacing: 14,
             childAspectRatio: 1.25,
             children: const [
-              _StatCard(
+              StatCard(
                 icon: Icons.set_meal,
                 value: '6900',
                 title: 'Total poissons',
                 color: Colors.blue,
               ),
-              _StatCard(
+              StatCard(
                 icon: Icons.waves,
                 value: '5/17',
                 title: 'Étangs actifs',
                 color: Colors.teal,
               ),
-              _StatCard(
+              StatCard(
                 icon: Icons.pie_chart,
                 value: '23.5%',
                 title: 'Occupation moy.',
                 color: Colors.green,
               ),
-              _StatCard(
+              StatCard(
                 icon: Icons.water_drop,
                 value: '5000',
                 title: 'Barrage',
@@ -320,60 +321,6 @@ class HomeScreen extends StatelessWidget {
                 fontWeight: FontWeight.w600,
               ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// =========================
-// CARTE STATISTIQUE
-// =========================
-class _StatCard extends StatelessWidget {
-  final IconData icon;
-  final String value;
-  final String title;
-  final Color color;
-
-  const _StatCard({
-    required this.icon,
-    required this.value,
-    required this.title,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.07),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: color, size: 30),
-          const Spacer(),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 26,
-              color: color,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          Text(
-            title,
-            style: const TextStyle(color: Colors.grey),
           ),
         ],
       ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'home_screen.dart';
 import 'pond_list_screen.dart';
+import '../../widgets/occupation_gauge.dart';
 
 class OccupancyScreen extends StatelessWidget {
   const OccupancyScreen({super.key});
@@ -489,32 +490,11 @@ class PondCard extends StatelessWidget {
           // =========================
           // CERCLE
           // =========================
-          SizedBox(
-            width: 52,
-            height: 52,
-
-            child: Stack(
-              alignment: Alignment.center,
-
-              children: [
-                CircularProgressIndicator(
-                  value: percent / 100,
-                  strokeWidth: 5,
-                  strokeCap: StrokeCap.round,
-                  backgroundColor: Colors.grey.shade200,
-                  color: color,
-                ),
-
-                Text(
-                  '$percent%',
-                  style: TextStyle(
-                    color: color,
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
+          OccupationGauge(
+            percent: percent.toDouble(),
+            color: color,
+            size: 52,
+            strokeWidth: 5,
           ),
 
           const SizedBox(height: 8),
