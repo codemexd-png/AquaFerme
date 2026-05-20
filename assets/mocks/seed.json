@@ -1,0 +1,136 @@
+{
+  "employes": [
+    { "id": "E1", "nom": "Ibrahim", "role": "agent" },
+    { "id": "E2", "nom": "Grâce",   "role": "agent" },
+    { "id": "E3", "nom": "Lyly",    "role": "agent" },
+    { "id": "E4", "nom": "Konan",   "role": "chef"  },
+    { "id": "E5", "nom": "Yao",     "role": "agent" },
+    { "id": "E6", "nom": "Konah",   "role": "agent" }
+  ],
+
+  "etangs": [
+    { "id": "A1", "groupe": "A", "surface": 900, "capaciteMax": 2700, "stockActuel": 1800 },
+    { "id": "A2", "groupe": "A", "surface": 900, "capaciteMax": 2700, "stockActuel": 2200 },
+    { "id": "A3", "groupe": "A", "surface": 900, "capaciteMax": 2700, "stockActuel": 500  },
+    { "id": "A4", "groupe": "A", "surface": 900, "capaciteMax": 2700, "stockActuel": 2500 },
+    { "id": "A5", "groupe": "A", "surface": 900, "capaciteMax": 2700, "stockActuel": 1200 },
+    { "id": "A6", "groupe": "A", "surface": 900, "capaciteMax": 2700, "stockActuel": 2700 },
+    { "id": "A7", "groupe": "A", "surface": 900, "capaciteMax": 2700, "stockActuel": 1950 },
+    { "id": "A8", "groupe": "A", "surface": 400, "capaciteMax": 1200, "stockActuel": 800  },
+    { "id": "A9", "groupe": "A", "surface": 400, "capaciteMax": 1200, "stockActuel": 600  },
+    { "id": "B1", "groupe": "B", "surface": 600, "capaciteMax": 1800, "stockActuel": 1600 },
+    { "id": "B2", "groupe": "B", "surface": 600, "capaciteMax": 1800, "stockActuel": 900  },
+    { "id": "B3", "groupe": "B", "surface": 600, "capaciteMax": 1800, "stockActuel": 1800 },
+    { "id": "B4", "groupe": "B", "surface": 600, "capaciteMax": 1800, "stockActuel": 400  },
+    { "id": "B5", "groupe": "B", "surface": 600, "capaciteMax": 1800, "stockActuel": 1200 },
+    { "id": "C1", "groupe": "C", "surface": 150, "capaciteMax": 450,  "stockActuel": 300  },
+    { "id": "C2", "groupe": "C", "surface": 150, "capaciteMax": 450,  "stockActuel": 450  }
+  ],
+
+  "barrage": {
+    "id": "BAR",
+    "nom": "Barrage principal",
+    "surface": 50000,
+    "stockTotal": 8000,
+    "deversements": [
+      { "date": "2026-05-10", "nbPoissons": 5000, "employeId": "E4", "note": "Déversement initial saison" },
+      { "date": "2026-05-15", "nbPoissons": 3000, "employeId": "E5", "note": "Apport complémentaire"      }
+    ]
+  },
+
+  "operations": [
+    {
+      "id": "OP001", "type": "peche",
+      "etangId": "A5", "date": "2026-05-17", "employeId": "E4",
+      "donnees": { "nbPoissonsEstime": 1200, "poidsMoyenG": 320 }
+    },
+    {
+      "id": "OP002", "type": "peche",
+      "etangId": "A1", "date": "2026-05-16", "employeId": "E4",
+      "donnees": { "nbPoissonsEstime": 1800, "poidsMoyenG": 290 }
+    },
+    {
+      "id": "OP003", "type": "mortalite",
+      "etangId": "A2", "date": "2026-05-18", "employeId": "E5",
+      "donnees": { "nbPoissonsM": 15, "stockAvant": 2215, "stockApres": 2200 }
+    },
+    {
+      "id": "OP004", "type": "mortalite",
+      "etangId": "C1", "date": "2026-05-16", "employeId": "E6",
+      "donnees": { "nbPoissonsM": 8, "stockAvant": 308, "stockApres": 300 }
+    },
+    {
+      "id": "OP005", "type": "transfert",
+      "etangSourceId": "A3", "etangDestId": "B2", "date": "2026-05-18", "employeId": "E6",
+      "donnees": { "nbPoissons": 200 }
+    },
+    {
+      "id": "OP006", "type": "qualiteEau",
+      "etangId": "B1", "date": "2026-05-19", "employeId": "E3",
+      "donnees": { "o2Mgl": 7.2, "temperatureC": 28.5, "couleur": "vert_clair" }
+    },
+    {
+      "id": "OP007", "type": "qualiteEau",
+      "etangId": "A4", "date": "2026-05-17", "employeId": "E3",
+      "donnees": { "o2Mgl": 6.8, "temperatureC": 29.1, "couleur": "vert" }
+    },
+    {
+      "id": "OP008", "type": "qualiteEau",
+      "etangId": "A6", "date": "2026-05-14", "employeId": "E3",
+      "donnees": { "o2Mgl": 5.9, "temperatureC": 30.2, "couleur": "brun_clair" }
+    },
+    {
+      "id": "OP009", "type": "peche",
+      "etangId": "B3", "date": "2026-05-13", "employeId": "E4",
+      "donnees": { "nbPoissonsEstime": 1800, "poidsMoyenG": 410 }
+    },
+    {
+      "id": "OP010", "type": "mortalite",
+      "etangId": "B4", "date": "2026-05-12", "employeId": "E5",
+      "donnees": { "nbPoissonsM": 22, "stockAvant": 422, "stockApres": 400 }
+    }
+  ],
+
+  "planning": [
+    {
+      "id": "T001", "titre": "Pêche de contrôle A5",
+      "description": "Vérifier la densité et le poids moyen des poissons",
+      "date": "2026-05-19", "priorite": "haute", "statut": "en_attente", "assigneId": "E4"
+    },
+    {
+      "id": "T002", "titre": "Saisie mortalité A2",
+      "description": "Enregistrer la mortalité observée ce matin",
+      "date": "2026-05-19", "priorite": "haute", "statut": "fait", "assigneId": "E5"
+    },
+    {
+      "id": "T003", "titre": "Mesure qualité eau – Étangs B",
+      "description": "Relevé O₂, température et couleur sur tous les étangs B",
+      "date": "2026-05-20", "priorite": "moyenne", "statut": "en_attente", "assigneId": "E3"
+    },
+    {
+      "id": "T004", "titre": "Transfert A3 → B2",
+      "description": "Transférer 200 poissons pour rééquilibrer la densité",
+      "date": "2026-05-20", "priorite": "moyenne", "statut": "en_attente", "assigneId": "E6"
+    },
+    {
+      "id": "T005", "titre": "Nettoyage filets étang C1",
+      "description": "Remplacer les filets endommagés côté est",
+      "date": "2026-05-21", "priorite": "basse", "statut": "en_attente", "assigneId": "E6"
+    },
+    {
+      "id": "T006", "titre": "Pêche de contrôle A1",
+      "description": "Contrôle mensuel densité et poids moyen",
+      "date": "2026-05-23", "priorite": "haute", "statut": "en_attente", "assigneId": "E4"
+    },
+    {
+      "id": "T007", "titre": "Qualité eau A4 + A6",
+      "description": "Relevé hebdomadaire O₂ et température",
+      "date": "2026-05-22", "priorite": "moyenne", "statut": "en_attente", "assigneId": "E3"
+    },
+    {
+      "id": "T008", "titre": "Peser lot B3",
+      "description": "Contrôle de croissance – peser un échantillon de 50 poissons",
+      "date": "2026-05-24", "priorite": "basse", "statut": "en_attente", "assigneId": "E4"
+    }
+  ]
+}
