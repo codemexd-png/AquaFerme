@@ -11,9 +11,10 @@ import '../../features/screens/add_task_screen.dart';
 import '../../features/screens/mortality_screen.dart';
 import '../../features/screens/transfer_screen.dart';
 // Les imports pour Login et Home seront ajoutés dès qu'on créera ces fichiers
+import '../../features/screens/home_screen.dart';
 
 final GoRouter appRouter = GoRouter(
-  initialLocation: '/',
+  initialLocation: '/home',
   routes: [
     GoRoute(
       path: '/',
@@ -48,10 +49,11 @@ final GoRouter appRouter = GoRouter(
       path: '/login',
       builder: (context, state) => const LoginView(),
     ),
+    */
     GoRoute(
       path: '/home',
-      builder: (context, state) => const HomeView(),
+      builder: (context, state) => const HomeScreen(),
     ),
-    */
+    
   ],
 );
