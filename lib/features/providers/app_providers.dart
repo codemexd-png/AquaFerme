@@ -1,15 +1,63 @@
 // ─── Fournisseur de données global ──────────────────────────────────────────
 // ChangeNotifier central de l'app. Injecté dans main.dart via ChangeNotifierProvider.
-// Gère la liste des tâches et notifie les widgets dépendants à chaque modification.
+// Gère la liste des tâches, des étangs et notifie les widgets dépendants.
 
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart'; // Remplacé pour avoir accès au type Color
 import '../task.dart';
+
+import '../models/pond.dart';
 
 class AppProvider extends ChangeNotifier {
   // Permissions utilisateur – à remplacer par un vrai système d'auth plus tard.
   final bool canEnterData = true;
   final bool isAdmin = false;
 
+  // ==========================================
+  // 🐟 DONNÉES DES ÉTANGS (Ajouté pour Grâce)
+  // ==========================================
+  // Ici, on crée une liste d'étangs de test mockés qui matchent les variables de son écran
+  final List<Pond> _ponds = [
+    Pond(
+      name: 'Étang A1',
+      category: 'Élevage',
+      surface: 120,
+      fish: 250,
+      weight: 45.2,
+      percent: 83.3,
+    ),
+    Pond(
+      name: 'Étang B3',
+      category: 'Alevinage',
+      surface: 80,
+      fish: 180,
+      weight: 12.5,
+      percent: 90.0,
+    ),
+    Pond(
+      name: 'Étang C2',
+      category: 'Reproduction',
+      surface: 150,
+      fish: 110,
+      weight: 120.0,
+      percent: 29.3,
+    ),
+  ];
+
+  List<Pond> get ponds => _ponds;
+
+  /// 🔍 Cherche un étang par son nom (utilisé par GoRouter via /pond/:id)
+  Pond? getPondByName(String name) {
+    try {
+      return _ponds
+          .firstWhere((pond) => pond.name.toLowerCase() == name.toLowerCase());
+    } catch (e) {
+      return null; // Retourne null si l'étang n'existe pas
+    }
+  }
+
+  // ==========================================
+  // 📋 GESTION DES TÂCHES (Ton code initial)
+  // ==========================================
   final List<Task> _tasks = [
     Task(
       id: '1',
