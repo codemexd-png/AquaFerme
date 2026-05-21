@@ -1,7 +1,6 @@
 // ─── Écran Planning ──────────────────────────────────────────────────────────
 // Affiche la liste des tâches via AppProvider (Consumer).
 // Deux vues disponibles : vue semaine (navigation par flèches) et toutes les tâches.
-// PlanningPage = wrapper Scaffold + BottomNav. PlanningScreen = contenu seul.
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -9,6 +8,7 @@ import 'package:intl/intl.dart';
 import '../providers/app_providers.dart';
 import '../task.dart';
 import 'add_task_screen.dart';
+import 'package:go_router/go_router.dart';
 import 'screen_shared.dart';
 
 class PlanningScreen extends StatefulWidget {
@@ -44,8 +44,8 @@ class _PlanningScreenState extends State<PlanningScreen>
     return Consumer<AppProvider>(
       builder: (context, provider, _) {
         final weekTasks = provider.getTasksForWeek(_selectedWeekStart);
-        final allTasks = provider.tasks..sort(
-            (a, b) => a.scheduledDate.compareTo(b.scheduledDate));
+        final allTasks = provider.tasks
+          ..sort((a, b) => a.scheduledDate.compareTo(b.scheduledDate));
 
         return Column(
           children: [
@@ -58,8 +58,8 @@ class _PlanningScreenState extends State<PlanningScreen>
                 children: [
                   IconButton(
                     onPressed: () => setState(() {
-                      _selectedWeekStart = _selectedWeekStart
-                          .subtract(const Duration(days: 7));
+                      _selectedWeekStart =
+                          _selectedWeekStart.subtract(const Duration(days: 7));
                     }),
                     icon: const Icon(Icons.chevron_left),
                   ),
@@ -141,8 +141,7 @@ class _PlanningScreenState extends State<PlanningScreen>
                   child: ElevatedButton.icon(
                     onPressed: () => Navigator.push(
                       context,
-                      MaterialPageRoute(
-                          builder: (_) => const AddTaskScreen()),
+                      MaterialPageRoute(builder: (_) => const AddTaskScreen()),
                     ),
                     icon: const Icon(Icons.add),
                     label: const Text('Ajouter une tâche'),
@@ -162,8 +161,17 @@ class _PlanningScreenState extends State<PlanningScreen>
   }
 
   Widget _buildWeekView(List<Task> tasks, AppProvider provider) {
-    final days = List.generate(7, (i) => _selectedWeekStart.add(Duration(days: i)));
-    final dayNames = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
+    final days =
+        List.generate(7, (i) => _selectedWeekStart.add(Duration(days: i)));
+    final dayNames = [
+      'Lundi',
+      'Mardi',
+      'Mercredi',
+      'Jeudi',
+      'Vendredi',
+      'Samedi',
+      'Dimanche'
+    ];
 
     return ListView.builder(
       padding: const EdgeInsets.all(16),
@@ -200,7 +208,8 @@ class _PlanningScreenState extends State<PlanningScreen>
             ),
             if (dayTasks.isEmpty)
               Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                padding:
+                    const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                 child: Text(
                   'Pas de tâche',
                   style: TextStyle(
@@ -218,8 +227,7 @@ class _PlanningScreenState extends State<PlanningScreen>
 }
 
 // ─── Carte de tâche ──────────────────────────────────────────────────────────
-// Affiche titre, description, statut, assigné et priorité (badge coloré).
-// Un appui ouvre un BottomSheet permettant de changer le statut ou supprimer.
+
 class _TaskCard extends StatelessWidget {
   final Task task;
   final AppProvider provider;
@@ -298,8 +306,7 @@ class _TaskCard extends StatelessWidget {
                     if (task.description.isNotEmpty)
                       Text(
                         task.description,
-                        style: TextStyle(
-                            fontSize: 12, color: Colors.grey[600]),
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -314,7 +321,8 @@ class _TaskCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 8),
                         if (task.assignedTo != null) ...[
-                          const Icon(Icons.person, size: 14, color: Colors.grey),
+                          const Icon(Icons.person,
+                              size: 14, color: Colors.grey),
                           const SizedBox(width: 2),
                           Text(
                             task.assignedTo!,
@@ -328,8 +336,7 @@ class _TaskCard extends StatelessWidget {
                 ),
               ),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: priorityColor.withAlpha(26),
                   borderRadius: BorderRadius.circular(8),
@@ -363,8 +370,7 @@ class _TaskCard extends StatelessWidget {
           children: [
             Text(
               task.title,
-              style: const TextStyle(
-                  fontSize: 18, fontWeight: FontWeight.bold),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
             ListTile(
@@ -406,7 +412,7 @@ class _TaskCard extends StatelessWidget {
   }
 }
 
-// ─── Page wrapper (Scaffold + AppBar + BottomNav) ─────────────────────────────
+// ─── Page wrapper (Scaffold + AppBar) ─────────────────────────────────────────
 
 class PlanningPage extends StatelessWidget {
   const PlanningPage({super.key});
@@ -439,13 +445,13 @@ class PlanningPage extends StatelessWidget {
             onPressed: () {},
           ),
           IconButton(
-            icon: const Icon(Icons.settings_outlined, color: Colors.black87),
-            onPressed: () {},
+            icon: const Icon(Icons.settings_outlined,
+                color: Color.fromARGB(255, 10, 10, 10)),
+            onPressed: () => context.push('/settings'),
           ),
         ],
       ),
       body: const PlanningScreen(),
-      bottomNavigationBar: const ScreenBottomNav(currentIndex: 3),
     );
   }
 }

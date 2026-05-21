@@ -1,14 +1,36 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart'; // 🧠 Ajouté pour centraliser toute la navigation
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
+// Import de ton fournisseur d'état
+import '../providers/app_providers.dart';
 // Widget réutilisable conservé
 import '../../widgets/stat_card.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Lance la vérification GPS dès que le premier rendu de l'écran est prêt
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<AppProvider>().checkLocation();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    // On écoute en temps réel l'état de géolocalisation géré par le AppProvider
+    final appProvider = context.watch<AppProvider>();
+    final bool isOnSite = appProvider.isOnSite;
+    final bool isLoadingGPS = appProvider.isLoadingLocation;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF4F8FB),
 
@@ -16,7 +38,7 @@ class HomeScreen extends StatelessWidget {
       // BARRE DU HAUT
       // =========================
       appBar: AppBar(
-        automaticallyImplyLeading: false, // Enlève la flèche retour
+        automaticallyImplyLeading: false,
         backgroundColor: const Color(0xFF0D47A1),
         centerTitle: true,
         title: const Row(
@@ -34,12 +56,27 @@ class HomeScreen extends StatelessWidget {
           ],
         ),
         actions: [
-          const Icon(Icons.location_off, color: Colors.redAccent),
+          // Icône de statut de géolocalisation dynamique
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16.0),
+            child: isLoadingGPS
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                : Icon(
+                    isOnSite ? Icons.location_on : Icons.location_off,
+                    color: isOnSite ? Colors.greenAccent : Colors.redAccent,
+                  ),
+          ),
           const SizedBox(width: 14),
           IconButton(
             icon: const Icon(Icons.settings, color: Colors.white),
-            onPressed: () => context
-                .push('/settings'), // Redirection vers ton profil/paramètres
+            onPressed: () => context.push('/settings'),
           ),
           const SizedBox(width: 12),
         ],
@@ -51,26 +88,22 @@ class HomeScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _warningGps(),
-
-          const SizedBox(height: 22),
+          // La bannière d'avertissement s'affiche uniquement si l'utilisateur n'est pas sur le site
+          if (!isOnSite && !isLoadingGPS) ...[
+            _warningGps(),
+            const SizedBox(height: 22),
+          ],
 
           const Text(
-            'Bonjour, xx',
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-            ),
+            'Bonjour, Ibrahima', // Nom mis à jour automatiquement
+            style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
           ),
 
           const SizedBox(height: 5),
 
           const Text(
             'Résumé de votre ferme piscicole',
-            style: TextStyle(
-              color: Colors.grey,
-              fontSize: 15,
-            ),
+            style: TextStyle(color: Colors.grey, fontSize: 15),
           ),
 
           const SizedBox(height: 22),
@@ -84,7 +117,7 @@ class HomeScreen extends StatelessWidget {
             physics: const NeverScrollableScrollPhysics(),
             crossAxisSpacing: 14,
             mainAxisSpacing: 14,
-            childAspectRatio: 1.25,
+            childAspectRatio: 1.0,
             children: const [
               StatCard(
                 icon: Icons.set_meal,
@@ -120,10 +153,7 @@ class HomeScreen extends StatelessWidget {
           // =========================
           const Text(
             'Tâches du jour',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
           ),
 
           const SizedBox(height: 12),
@@ -151,10 +181,7 @@ class HomeScreen extends StatelessWidget {
           // =========================
           const Text(
             'Accès rapide',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
           ),
 
           const SizedBox(height: 14),
@@ -165,7 +192,7 @@ class HomeScreen extends StatelessWidget {
             physics: const NeverScrollableScrollPhysics(),
             crossAxisSpacing: 14,
             mainAxisSpacing: 14,
-            childAspectRatio: 1.35,
+            childAspectRatio: 1.1,
             children: [
               _QuickCard(
                 title: 'Étangs A',
@@ -193,54 +220,14 @@ class HomeScreen extends StatelessWidget {
               ),
               _QuickCard(
                 title: 'Barrage',
-                subtitle: 'Suivi du niveau d’eau',
+                subtitle: "Suivi du niveau d'eau",
                 color: const Color(0xFF1565C0),
                 onTap: () => context.push('/dam'),
               ),
             ],
           ),
-        ],
-      ),
 
-      // =========================
-      // TAB BAR
-      // =========================
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 0,
-        selectedItemColor: const Color(0xFF0D47A1),
-        unselectedItemColor: Colors.grey,
-        type: BottomNavigationBarType.fixed,
-        onTap: (index) {
-          if (index == 1) {
-            context.go(
-                '/pond-list'); // Utilisation de .go() pour la barre principale
-          }
-          if (index == 4) {
-            context.go(
-                '/occupancy'); // Utilisation de .go() pour la barre principale
-          }
-        },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard),
-            label: 'Tableau',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.waves),
-            label: 'Étangs',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.science),
-            label: 'Qualité',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_month),
-            label: 'Planning',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.pie_chart),
-            label: 'Occupation',
-          ),
+          const SizedBox(height: 16),
         ],
       ),
     );
@@ -264,10 +251,7 @@ class HomeScreen extends StatelessWidget {
           Expanded(
             child: Text(
               "Vous n'êtes pas sur le site. La saisie de données est désactivée.",
-              style: TextStyle(
-                color: Colors.red,
-                fontWeight: FontWeight.w600,
-              ),
+              style: TextStyle(color: Colors.red, fontWeight: FontWeight.w600),
             ),
           ),
         ],
@@ -318,15 +302,10 @@ class _TaskCard extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  subtitle,
-                  style: const TextStyle(color: Colors.grey),
-                ),
+                Text(subtitle, style: const TextStyle(color: Colors.grey)),
               ],
             ),
           ),
@@ -373,7 +352,7 @@ class _QuickCard extends StatelessWidget {
       borderRadius: BorderRadius.circular(18),
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(18),
+        padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: color,
           borderRadius: BorderRadius.circular(18),
@@ -388,19 +367,22 @@ class _QuickCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(Icons.waves, color: Colors.white, size: 28),
+            const Icon(Icons.waves, color: Colors.white, size: 24),
             const Spacer(),
             Text(
               title,
               style: const TextStyle(
                 color: Colors.white,
-                fontSize: 18,
+                fontSize: 15,
                 fontWeight: FontWeight.bold,
               ),
             ),
             Text(
               subtitle,
-              style: const TextStyle(color: Colors.white70),
+              style: const TextStyle(
+                color: Colors.white70,
+                fontSize: 11,
+              ),
             ),
           ],
         ),
