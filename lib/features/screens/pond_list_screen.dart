@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart'; // 🧠 Ajouté pour utiliser context.push()
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart'; // 🛰️ Import indispensable pour Consumer
 
-import 'home_screen.dart';
-import 'occupancy_screen.dart';
-import 'pond_detail_screen.dart';
+// Widget réutilisable conservé
 import '../../widgets/occupation_gauge.dart';
+import '../../features/providers/app_providers.dart'; // Ajuste le chemin selon ton dossier providers
 
 class PondListScreen extends StatefulWidget {
   final String initialCategory;
@@ -219,11 +219,23 @@ class _PondListScreenState extends State<PondListScreen> {
             ),
           ],
         ),
-        actions: const [
-          Icon(Icons.location_off, color: Colors.redAccent),
-          SizedBox(width: 14),
-          Icon(Icons.settings, color: Colors.white),
-          SizedBox(width: 12),
+        actions: [
+          // ===================================================================
+          // ICÔNE DE LOCALISATION DYNAMIQUE
+          // Écoute l'état de la géolocalisation pour mettre à jour la vue globale
+          // ===================================================================
+          Consumer<AppProvider>(
+            builder: (context, provider, _) => Icon(
+              provider.isOnSite ? Icons.location_on : Icons.location_off,
+              color: provider.isOnSite ? Colors.greenAccent : Colors.redAccent,
+            ),
+          ),
+          const SizedBox(width: 14),
+          IconButton(
+            icon: const Icon(Icons.settings, color: Colors.white),
+            onPressed: () => context.push('/settings'),
+          ),
+          const SizedBox(width: 12),
         ],
       ),
 
@@ -253,17 +265,17 @@ class _PondListScreenState extends State<PondListScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                selectedCategory == 'Tous'
-                    ? '17 étangs'
-                    : 'Étangs $selectedCategory',
+                '${filteredPonds.length} étangs',
                 style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const Text(
-                '6900 poissons',
-                style: TextStyle(color: Colors.grey),
+              Text(
+                '${filteredPonds.fold(0, (sum, p) => sum + (p['fish'] as int))} poissons',
+                style: const TextStyle(
+                  color: Colors.grey,
+                ),
               ),
             ],
           ),
@@ -281,41 +293,6 @@ class _PondListScreenState extends State<PondListScreen> {
               color: pond['color'],
             );
           }),
-        ],
-      ),
-
-      // =========================
-      // TABBAR
-      // =========================
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 1,
-        selectedItemColor: const Color(0xFF0D47A1),
-        unselectedItemColor: Colors.grey,
-        type: BottomNavigationBarType.fixed,
-        onTap: (index) {
-          if (index == 0) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => const HomeScreen()),
-            );
-          }
-
-          if (index == 4) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => const OccupancyScreen()),
-            );
-          }
-        },
-        items: const [
-          BottomNavigationBarItem(
-              icon: Icon(Icons.dashboard), label: 'Tableau'),
-          BottomNavigationBarItem(icon: Icon(Icons.waves), label: 'Étangs'),
-          BottomNavigationBarItem(icon: Icon(Icons.science), label: 'Qualité'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.calendar_month), label: 'Planning'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.pie_chart), label: 'Occupation'),
         ],
       ),
     );
@@ -381,7 +358,6 @@ class _PondCard extends StatelessWidget {
     return InkWell(
       borderRadius: BorderRadius.circular(20),
       onTap: () {
-        // Utilisation de GoRouter pour naviguer proprement avec l'identifiant unique
         context.push('/pond/$name', extra: {
           'name': name,
           'category': category,

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import '../providers/app_providers.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -89,7 +91,7 @@ class SettingsScreen extends StatelessWidget {
                 const SizedBox(width: 12),
                 OutlinedButton(
                   onPressed: () {
-                    // TODO : déclencher la vérification GPS
+                    context.read<AppProvider>().checkLocation();
                   },
                   style: OutlinedButton.styleFrom(
                     side: const BorderSide(color: Color(0xFF0D47A1)),

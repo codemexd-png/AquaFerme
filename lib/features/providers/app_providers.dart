@@ -1,11 +1,11 @@
 // ─── Fournisseur de données global ──────────────────────────────────────────
 // ChangeNotifier central de l'app. Injecté dans main.dart via ChangeNotifierProvider.
-// Gère la liste des tâches, des étangs et notifie les widgets dépendants.
+// Gère la liste des tâches, des étangs, la géolocalisation et notifie les widgets dépendants.
 
-import 'package:flutter/material.dart'; // Remplacé pour avoir accès au type Color
+import 'package:flutter/material.dart'; // Accès au type Color et à ChangeNotifier
 import '../task.dart';
-
 import '../models/pond.dart';
+import '../../core/services/geo_service.dart'; // Import de ton nouveau service géo
 
 class AppProvider extends ChangeNotifier {
   // Permissions utilisateur – à remplacer par un vrai système d'auth plus tard.
@@ -13,9 +13,48 @@ class AppProvider extends ChangeNotifier {
   final bool isAdmin = false;
 
   // ==========================================
+  // 🛰️ GÉOLOCALISATION & PERMISSIONS
+  // ==========================================
+  bool _isOnSite = false; // état initial : pas sur le site de la ferme
+  bool _isLoadingLocation =
+      false; // permet d'afficher un indicateur de chargement si besoin
+
+  // Getters publics pour accéder à l'état depuis tes composants/écrans
+  bool get isOnSite => _isOnSite;
+  bool get isLoadingLocation => _isLoadingLocation;
+
+  /// Vérifie si l'utilisateur se trouve actuellement sur le site de la ferme
+  /// et met à jour l'état de l'application si nécessaire.
+  Future<void> checkLocation() async {
+    _isLoadingLocation = true;
+    notifyListeners(); // On notifie pour l'état de chargement
+
+    try {
+      // Appel asynchrone de la logique de calcul de distance et de permissions
+      final bool result = await GeoService.checkIfOnSite();
+
+      if (_isOnSite != result) {
+        _isOnSite = result;
+      }
+    } catch (e) {
+      // Sécurité : si le GPS ou les permissions plantent, on considère que l'utilisateur est hors-site
+      debugPrint("Erreur lors de la vérification GPS dans AppProvider: $e");
+      _isOnSite = false;
+    } finally {
+      _isLoadingLocation = false;
+      notifyListeners(); // Mise à jour de l'interface (ex: AppBar, validation de tâche)
+    }
+  }
+
+  /// Réinitialise manuellement le statut de la localisation
+  void resetLocation() {
+    _isOnSite = false;
+    notifyListeners();
+  }
+
+  // ==========================================
   // 🐟 DONNÉES DES ÉTANGS (Ajouté pour Grâce)
   // ==========================================
-  // Ici, on crée une liste d'étangs de test mockés qui matchent les variables de son écran
   final List<Pond> _ponds = [
     Pond(
       name: 'Étang A1',
