@@ -16,26 +16,34 @@ import '../../features/screens/occupancy_screen.dart';
 import '../../features/screens/dam_screen.dart';
 import '../../features/screens/settings_Screen.dart';
 // Les imports pour Login et Home seront ajoutés dès qu'on créera ces fichiers
+import '../../features/screens/login_screen.dart';
 import '../../features/screens/home_screen.dart';
+import '../../widgets/app_navigation.dart'; // à ajouter
 
 final GoRouter appRouter = GoRouter(
-  initialLocation: '/home',
+  //Permet de démarrer l'application sur le SplashView, qui redirigera ensuite vers le LoginScreen après une courte pause.
+  initialLocation: '/',
   routes: [
+    // ─── Hors shell (pas de bottom nav) ──────────────────────────
     GoRoute(
       path: '/',
       builder: (context, state) => const SplashView(),
     ),
     GoRoute(
-      path: '/planning',
-      builder: (context, state) => const PlanningPage(),
+      path: '/settings',
+      builder: (context, state) => const SettingsScreen(),
+    ),
+    GoRoute(
+      path: '/pond/:id',
+      builder: (context, state) {
+        final pondId = state.pathParameters['id']!;
+        final extra = state.extra as Map<String, dynamic>?;
+        return PondDetailScreen(pondId: pondId, pondData: extra);
+      },
     ),
     GoRoute(
       path: '/add-operation',
       builder: (context, state) => const AddOperationScreen(),
-    ),
-    GoRoute(
-      path: '/water-quality',
-      builder: (context, state) => const WaterQualityScreen(),
     ),
     GoRoute(
       path: '/add-task',
@@ -49,42 +57,43 @@ final GoRouter appRouter = GoRouter(
       path: '/transfer',
       builder: (context, state) => const TransferScreen(),
     ),
-    /*  les routes pour le login et la home  
-    GoRoute(
-      path: '/login',
-      builder: (context, state) => const LoginView(),
-    ),
-    */
-    GoRoute(
-      path: '/home',
-      builder: (context, state) => const HomeScreen(),
-    ),
-   GoRoute(
-  path: '/pond/:id',
-  builder: (context, state) {
-    final pondId = state.pathParameters['id']!;
-    final extra = state.extra as Map<String, dynamic>?;
-    return PondDetailScreen(pondId: pondId, pondData: extra);
-  },
-),
-    GoRoute(
-      path: '/pond-list',
-      builder: (context, state) {
-        final category = state.uri.queryParameters['category'] ?? 'Tous';
-        return PondListScreen(initialCategory: category);
-      },
-    ),
-    GoRoute(
-      path: '/occupancy',
-      builder: (context, state) => const OccupancyScreen(),
-    ),
     GoRoute(
       path: '/dam',
       builder: (context, state) => const DamScreen(),
     ),
     GoRoute(
-      path: '/settings',
-      builder: (context, state) => const SettingsScreen(),
+      path: '/login',
+      builder: (context, state) => const LoginScreen(),
+    ),
+
+    // ─── Dans le shell (avec bottom nav) ─────────────────────────
+    ShellRoute(
+      builder: (context, state, child) => AppNavigation(child: child),
+      routes: [
+        GoRoute(
+          path: '/home',
+          builder: (context, state) => const HomeScreen(),
+        ),
+        GoRoute(
+          path: '/pond-list',
+          builder: (context, state) {
+            final category = state.uri.queryParameters['category'] ?? 'Tous';
+            return PondListScreen(initialCategory: category);
+          },
+        ),
+        GoRoute(
+          path: '/water-quality',
+          builder: (context, state) => const WaterQualityScreen(),
+        ),
+        GoRoute(
+          path: '/planning',
+          builder: (context, state) => const PlanningPage(),
+        ),
+        GoRoute(
+          path: '/occupancy',
+          builder: (context, state) => const OccupancyScreen(),
+        ),
+      ],
     ),
   ],
 );

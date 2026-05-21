@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart'; // 🧠 Indispensable pour context.pop()
+import 'package:provider/provider.dart'; // 🛰️ Ajouté pour écouter AppProvider
+
+// Widget réutilisable conservé
+import '../../widgets/stat_card.dart';
+import '../../features/providers/app_providers.dart'; // Ajuste le chemin selon ton dossier providers
 
 class PondDetailScreen extends StatelessWidget {
   // =========================
@@ -16,6 +21,9 @@ class PondDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Écoute dynamique de l'état de géolocalisation globale
+    final bool isOnSite = context.watch<AppProvider>().isOnSite;
+
     // 🛡️ Sécurité essentielle : évite le crash si la Map est nulle
     if (pondData == null) {
       return Scaffold(
@@ -75,7 +83,7 @@ class PondDetailScreen extends StatelessWidget {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
-            context.pop(); //
+            context.pop();
           },
         ),
       ),
@@ -199,39 +207,41 @@ class PondDetailScreen extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(height: 18),
-
-          // =========================
-          // MESSAGE GPS
-          // =========================
-          Container(
-            padding: const EdgeInsets.all(15),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFF3E0),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: Colors.orange.shade200,
-              ),
-            ),
-            child: const Row(
-              children: [
-                Icon(
-                  Icons.location_off,
-                  color: Colors.orange,
+          // ===================================================================
+          // MESSAGE GPS DYNAMIQUE
+          // S'affiche uniquement si l'employé n'est pas physiquement à la ferme
+          // ===================================================================
+          if (!isOnSite) ...[
+            const SizedBox(height: 18),
+            Container(
+              padding: const EdgeInsets.all(15),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF3E0),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: Colors.orange.shade200,
                 ),
-                SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    'Saisie désactivée : vous devez être sur le site.',
-                    style: TextStyle(
-                      color: Colors.orange,
-                      fontWeight: FontWeight.w600,
+              ),
+              child: const Row(
+                children: [
+                  Icon(
+                    Icons.location_off,
+                    color: Colors.orange,
+                  ),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Saisie désactivée : vous devez être sur le site.',
+                      style: TextStyle(
+                        color: Colors.orange,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
+          ],
 
           const SizedBox(height: 22),
 
@@ -290,9 +300,6 @@ class PondDetailScreen extends StatelessWidget {
   }
 }
 
-// =========================
-// WIDGET LIGNE INFO
-// =========================
 class _InfoRow extends StatelessWidget {
   final String label;
   final String value;
