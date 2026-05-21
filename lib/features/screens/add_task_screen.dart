@@ -65,10 +65,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
           'Créer une tâche',
           style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 16),
         ),
-        actions: [
-          IconButton(icon: const Icon(Icons.notifications_none, color: Colors.black87), onPressed: () {}),
-          IconButton(icon: const Icon(Icons.settings_outlined, color: Colors.black87), onPressed: () {}),
-        ],
+
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -211,7 +208,6 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: const ScreenBottomNav(currentIndex: 3),
     );
   }
 }
