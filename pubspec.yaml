@@ -25,6 +25,8 @@ dependencies:
 
 flutter:
   uses-material-design: true
-  # N'oublie pas d'activer le dossier assets pour les mocks de Lyly et tes icônes
+
+  # Configuration des dossiers de ressources d'AquaTrack
   assets:
+    - assets/images/
     - assets/mocks/

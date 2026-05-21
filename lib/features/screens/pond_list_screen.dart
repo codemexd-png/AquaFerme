@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart'; // 🧠 Ajouté pour utiliser context.push()
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart'; // 🛰️ Import indispensable pour Consumer
 
+// Widget réutilisable conservé
 import '../../widgets/occupation_gauge.dart';
+import '../../features/providers/app_providers.dart'; // Ajuste le chemin selon ton dossier providers
 
 class PondListScreen extends StatefulWidget {
   final String initialCategory;
@@ -216,11 +219,23 @@ class _PondListScreenState extends State<PondListScreen> {
             ),
           ],
         ),
-        actions: const [
-          Icon(Icons.location_off, color: Colors.redAccent),
-          SizedBox(width: 14),
-          Icon(Icons.settings, color: Colors.white),
-          SizedBox(width: 12),
+        actions: [
+          // ===================================================================
+          // ICÔNE DE LOCALISATION DYNAMIQUE
+          // Écoute l'état de la géolocalisation pour mettre à jour la vue globale
+          // ===================================================================
+          Consumer<AppProvider>(
+            builder: (context, provider, _) => Icon(
+              provider.isOnSite ? Icons.location_on : Icons.location_off,
+              color: provider.isOnSite ? Colors.greenAccent : Colors.redAccent,
+            ),
+          ),
+          const SizedBox(width: 14),
+          IconButton(
+            icon: const Icon(Icons.settings, color: Colors.white),
+            onPressed: () => context.push('/settings'),
+          ),
+          const SizedBox(width: 12),
         ],
       ),
 
@@ -249,7 +264,6 @@ class _PondListScreenState extends State<PondListScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-
               Text(
                 '${filteredPonds.length} étangs',
                 style: const TextStyle(
@@ -257,7 +271,6 @@ class _PondListScreenState extends State<PondListScreen> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-
               Text(
                 '${filteredPonds.fold(0, (sum, p) => sum + (p['fish'] as int))} poissons',
                 style: const TextStyle(
@@ -280,37 +293,6 @@ class _PondListScreenState extends State<PondListScreen> {
               color: pond['color'],
             );
           }),
-        ],
-      ),
-
-      // =========================
-      // TABBAR
-      // =========================
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 1,
-        selectedItemColor: const Color(0xFF0D47A1),
-        unselectedItemColor: Colors.grey,
-        type: BottomNavigationBarType.fixed,
-        onTap: (index) {
-          if (index == 0) context.go('/home');
-
-          if (index == 1) context.go('/pond-list');
-
-          if (index == 2) context.go('/quality');
-
-          if (index == 3) context.go('/planning');
-
-          if (index == 4) context.go('/occupancy');
-        },
-        items: const [
-          BottomNavigationBarItem(
-              icon: Icon(Icons.dashboard), label: 'Tableau'),
-          BottomNavigationBarItem(icon: Icon(Icons.waves), label: 'Étangs'),
-          BottomNavigationBarItem(icon: Icon(Icons.science), label: 'Qualité'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.calendar_month), label: 'Planning'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.pie_chart), label: 'Occupation'),
         ],
       ),
     );
@@ -376,7 +358,6 @@ class _PondCard extends StatelessWidget {
     return InkWell(
       borderRadius: BorderRadius.circular(20),
       onTap: () {
-        // Utilisation de GoRouter pour naviguer proprement avec l'identifiant unique
         context.push('/pond/$name', extra: {
           'name': name,
           'category': category,
