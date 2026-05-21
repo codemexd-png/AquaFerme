@@ -4,7 +4,9 @@ import 'core/navigation/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'features/providers/app_providers.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized(); // requis avant tout appel async
+  await MockDataService.init();             // charge assets/mocks/seed.json
   runApp(const MyApp());
 }
 
