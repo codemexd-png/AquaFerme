@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../services/api_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -21,7 +22,7 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void _handleLogin() {
+  Future<void> _handleLogin() async {
     if (_usernameController.text.isEmpty || _passwordController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -32,15 +33,34 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
+// Appel de la méthode de connexion de l'API
     setState(() => _isLoading = true);
 
-    // Simulation délai réseau — à remplacer par l'appel API
-    Future.delayed(const Duration(seconds: 1), () {
-      if (mounted) {
-        setState(() => _isLoading = false);
+    final token = await ApiService.login(
+      _usernameController.text.trim(),
+      _passwordController.text.trim(),
+    );
+
+    setState(() => _isLoading = false);
+
+    if (token != null) {
+      // Connexion réussie → naviguer vers l'accueil
+      if (context.mounted) {
         context.go('/home');
       }
-    });
+    } else {
+      // Mauvais identifiants
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Identifiants incorrects.'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    }
+
+  
   }
 
   @override
