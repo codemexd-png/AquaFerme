@@ -19,6 +19,9 @@ dependencies:
   # Formatage des dates (planning)
   intl: ^0.19.0
 
+  # Requêtes HTTP vers le backend
+  http: ^1.2.0
+
   # Géolocalisation & Permissions (Cœur de tes tâches de vendredi)
   geolocator: ^11.0.0
   permission_handler: ^11.3.0
