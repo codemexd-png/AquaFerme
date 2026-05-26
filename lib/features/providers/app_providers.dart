@@ -6,6 +6,7 @@ import 'package:flutter/material.dart'; // Accès au type Color et à ChangeNoti
 import '../task.dart';
 import '../models/pond.dart';
 import '../../core/services/geo_service.dart'; // Import de ton nouveau service géo
+import '../../core/services/api_service.dart';
 
 class AppProvider extends ChangeNotifier {
   // Permissions utilisateur – à remplacer par un vrai système d'auth plus tard.
@@ -95,37 +96,33 @@ class AppProvider extends ChangeNotifier {
   }
 
   // ==========================================
-  // 📋 GESTION DES TÂCHES (Ton code initial)
+  // 📋 GESTION DES TÂCHES
   // ==========================================
-  final List<Task> _tasks = [
-    Task(
-      id: '1',
-      title: 'Pêche de contrôle A5',
-      description: 'Vérifier la densité et le poids moyen des poissons',
-      scheduledDate: DateTime(2026, 5, 19),
-      priority: TaskPriority.high,
-      assignedTo: 'Konan',
-    ),
-    Task(
-      id: '2',
-      title: 'Mesure qualité eau – Étang B',
-      description: 'Relevé O₂, température et couleur',
-      scheduledDate: DateTime(2026, 5, 20),
-      priority: TaskPriority.medium,
-      assignedTo: 'Yao',
-    ),
-    Task(
-      id: '3',
-      title: 'Nettoyage filets étangs C1',
-      description: 'Remplacer les filets endommagés',
-      scheduledDate: DateTime(2026, 5, 21),
-      priority: TaskPriority.low,
-      assignedTo: 'Konah',
-    ),
-  ];
+  List<Task> _tasks = [];
+  bool _isLoadingTasks = false;
+  String? _tasksError;
+
+  bool get isLoadingTasks => _isLoadingTasks;
+  String? get tasksError => _tasksError;
 
   /// Retourne une copie mutable de la liste (pour que le tri externe n'affecte pas _tasks)
   List<Task> get tasks => List.of(_tasks);
+
+  /// Charge les tâches depuis GET /tasks et notifie les listeners.
+  Future<void> loadTasks() async {
+    _isLoadingTasks = true;
+    _tasksError = null;
+    notifyListeners();
+    try {
+      _tasks = await ApiService.fetchTasks();
+    } catch (e) {
+      _tasksError = e.toString();
+      debugPrint('Erreur chargement tâches : $e');
+    } finally {
+      _isLoadingTasks = false;
+      notifyListeners();
+    }
+  }
 
   /// Retourne les tâches dont la date est dans la semaine commençant à [weekStart].
   List<Task> getTasksForWeek(DateTime weekStart) {

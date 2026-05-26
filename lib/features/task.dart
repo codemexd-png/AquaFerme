@@ -27,6 +27,32 @@ class Task {
     this.assignedTo,
   });
 
+  factory Task.fromJson(Map<String, dynamic> json) {
+    return Task(
+      id: json['id'].toString(),
+      title: json['title'] as String,
+      description: json['description'] as String? ?? '',
+      scheduledDate: DateTime.parse(json['scheduledDate'] as String),
+      priority: _parsePriority(json['priority'] as String? ?? 'medium'),
+      status: _parseStatus(json['status'] as String? ?? 'pending'),
+      assignedTo: json['assignedTo'] as String?,
+    );
+  }
+
+  static TaskPriority _parsePriority(String s) => switch (s) {
+        'urgent' => TaskPriority.urgent,
+        'high' => TaskPriority.high,
+        'low' => TaskPriority.low,
+        _ => TaskPriority.medium,
+      };
+
+  static TaskStatus _parseStatus(String s) => switch (s) {
+        'inProgress' => TaskStatus.inProgress,
+        'completed' => TaskStatus.completed,
+        'cancelled' => TaskStatus.cancelled,
+        _ => TaskStatus.pending,
+      };
+
   /// Libellé français du statut, affiché dans les cartes de tâche.
   String get statusLabel => switch (status) {
         TaskStatus.pending => 'En attente',
