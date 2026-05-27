@@ -31,6 +31,10 @@ class _PlanningScreenState extends State<PlanningScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    // Chargement des tâches depuis GET /tasks au premier affichage
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<AppProvider>().loadTasks();
+    });
   }
 
   @override
@@ -43,6 +47,32 @@ class _PlanningScreenState extends State<PlanningScreen>
   Widget build(BuildContext context) {
     return Consumer<AppProvider>(
       builder: (context, provider, _) {
+        // ── État de chargement ──
+        if (provider.isLoadingTasks) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        // ── État d'erreur ──
+        if (provider.tasksError != null) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.cloud_off, size: 48, color: Colors.grey),
+                const SizedBox(height: 12),
+                Text('Impossible de charger les tâches',
+                    style: TextStyle(color: Colors.grey[600])),
+                const SizedBox(height: 8),
+                TextButton.icon(
+                  onPressed: () => provider.loadTasks(),
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Réessayer'),
+                ),
+              ],
+            ),
+          );
+        }
+
         final weekTasks = provider.getTasksForWeek(_selectedWeekStart);
         final allTasks = provider.tasks
           ..sort((a, b) => a.scheduledDate.compareTo(b.scheduledDate));

@@ -1,55 +1,7 @@
 import 'package:flutter/material.dart';
 import 'screen_shared.dart';
 import 'package:go_router/go_router.dart';
-
-// ─── Données mockées ──────────────────────────────────────────────────────────
-
-class _WaterEntry {
-  final String pondId;
-  final String date;
-  final double tempC;
-  final double ph;
-  final double o2;
-  final String couleur;
-  final String agent;
-
-  const _WaterEntry({
-    required this.pondId,
-    required this.date,
-    required this.tempC,
-    required this.ph,
-    required this.o2,
-    required this.couleur,
-    required this.agent,
-  });
-}
-
-const _mockEntries = [
-  _WaterEntry(
-      pondId: 'A1',
-      date: '19/05/2026',
-      tempC: 27.0,
-      ph: 7.0,
-      o2: 6.5,
-      couleur: 'Vert clair',
-      agent: 'Yao'),
-  _WaterEntry(
-      pondId: 'B1',
-      date: '19/05/2026',
-      tempC: 26.5,
-      ph: 7.0,
-      o2: 5.8,
-      couleur: 'Vert foncé',
-      agent: 'Yao'),
-  _WaterEntry(
-      pondId: 'A3',
-      date: '18/05/2026',
-      tempC: 28.2,
-      ph: 7.5,
-      o2: 4.8,
-      couleur: 'Vert clair',
-      agent: 'Konan'),
-];
+import '../../core/services/api_service.dart';
 
 // ─── Écran Qualité de l'eau ───────────────────────────────────────────────────
 
@@ -66,6 +18,31 @@ class _WaterQualityScreenState extends State<WaterQualityScreen> {
   final _phCtrl = TextEditingController();
   final _o2Ctrl = TextEditingController();
   final _couleurCtrl = TextEditingController();
+
+  List<Map<String, dynamic>> _entries = [];
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadEntries();
+  }
+
+  Future<void> _loadEntries() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+    try {
+      final data = await ApiService.fetchWaterQuality();
+      setState(() => _entries = data);
+    } catch (e) {
+      setState(() => _error = e.toString());
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
 
   @override
   void dispose() {
@@ -206,10 +183,34 @@ class _WaterQualityScreenState extends State<WaterQualityScreen> {
                   color: Colors.black87),
             ),
           ),
-          ..._mockEntries.map((e) => _WaterEntryCard(
-              entry: e,
-              statusColor: _statusColor(e.o2, e.ph),
-              statusLabel: _statusLabel(e.o2, e.ph))),
+          if (_isLoading)
+            const Center(child: CircularProgressIndicator())
+          else if (_error != null)
+            Center(
+              child: Column(
+                children: [
+                  const Icon(Icons.cloud_off, color: Colors.grey),
+                  const SizedBox(height: 8),
+                  Text('Erreur de chargement',
+                      style: TextStyle(color: Colors.grey[600])),
+                  TextButton.icon(
+                    onPressed: _loadEntries,
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Réessayer'),
+                  ),
+                ],
+              ),
+            )
+          else
+            ..._entries.map((e) {
+              final o2 = (e['o2'] as num).toDouble();
+              final ph = (e['ph'] as num).toDouble();
+              return _WaterEntryCard(
+                entry: e,
+                statusColor: _statusColor(o2, ph),
+                statusLabel: _statusLabel(o2, ph),
+              );
+            }),
         ],
       ),
     );
@@ -219,7 +220,7 @@ class _WaterQualityScreenState extends State<WaterQualityScreen> {
 // ─── Carte mesure eau ─────────────────────────────────────────────────────────
 
 class _WaterEntryCard extends StatelessWidget {
-  final _WaterEntry entry;
+  final Map<String, dynamic> entry;
   final Color statusColor;
   final String statusLabel;
 
@@ -230,6 +231,14 @@ class _WaterEntryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final pondId = entry['pondId'] as String? ?? '';
+    final date = entry['date'] as String? ?? '';
+    final o2 = (entry['o2'] as num?)?.toDouble() ?? 0.0;
+    final tempC = (entry['tempC'] as num?)?.toDouble() ?? 0.0;
+    final couleur = entry['couleur'] as String? ?? '';
+    final ph = (entry['ph'] as num?)?.toDouble() ?? 0.0;
+    final agent = entry['agent'] as String? ?? '';
+
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
@@ -249,7 +258,7 @@ class _WaterEntryCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Étang ${entry.pondId}',
+              Text('Étang $pondId',
                   style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 14,
@@ -270,7 +279,7 @@ class _WaterEntryCard extends StatelessWidget {
                             fontWeight: FontWeight.bold)),
                   ),
                   const SizedBox(width: 8),
-                  Text(entry.date,
+                  Text(date,
                       style: TextStyle(fontSize: 11, color: Colors.grey[500])),
                 ],
               ),
@@ -282,19 +291,19 @@ class _WaterEntryCard extends StatelessWidget {
               _Metric(
                   icon: Icons.water_drop_outlined,
                   label: 'O₂',
-                  value: '${entry.o2} mg/L',
+                  value: '$o2 mg/L',
                   color: Colors.blue),
               const SizedBox(width: 16),
               _Metric(
                   icon: Icons.thermostat,
                   label: 'Temp.',
-                  value: '${entry.tempC} °C',
+                  value: '$tempC °C',
                   color: Colors.orange),
               const SizedBox(width: 16),
               _Metric(
                   icon: Icons.palette_outlined,
                   label: 'Couleur',
-                  value: entry.couleur,
+                  value: couleur,
                   color: Colors.green),
             ],
           ),
@@ -304,12 +313,12 @@ class _WaterEntryCard extends StatelessWidget {
               _Metric(
                   icon: Icons.science_outlined,
                   label: 'pH',
-                  value: '${entry.ph}',
+                  value: '$ph',
                   color: Colors.purple),
               const SizedBox(width: 16),
               Icon(Icons.person_outline, size: 13, color: Colors.grey[500]),
               const SizedBox(width: 4),
-              Text(entry.agent,
+              Text(agent,
                   style: TextStyle(fontSize: 12, color: Colors.grey[600])),
             ],
           ),
