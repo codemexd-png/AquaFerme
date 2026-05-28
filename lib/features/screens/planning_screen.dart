@@ -74,7 +74,7 @@ class _PlanningScreenState extends State<PlanningScreen>
         }
 
         final weekTasks = provider.getTasksForWeek(_selectedWeekStart);
-        final allTasks = provider.tasks
+        final allTasks = [...provider.tasks]
           ..sort((a, b) => a.scheduledDate.compareTo(b.scheduledDate));
 
         return Column(
@@ -404,14 +404,6 @@ class _TaskCard extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             ListTile(
-              leading: const Icon(Icons.play_circle, color: Colors.blue),
-              title: const Text('Marquer en cours'),
-              onTap: () {
-                provider.updateTaskStatus(task.id, TaskStatus.inProgress);
-                Navigator.pop(ctx);
-              },
-            ),
-            ListTile(
               leading: const Icon(Icons.check_circle, color: Colors.green),
               title: const Text('Marquer terminé'),
               onTap: () {
@@ -420,18 +412,10 @@ class _TaskCard extends StatelessWidget {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.cancel, color: Colors.grey),
-              title: const Text('Annuler'),
+              leading: const Icon(Icons.pending, color: Colors.orange),
+              title: const Text('Remettre en attente'),
               onTap: () {
-                provider.updateTaskStatus(task.id, TaskStatus.cancelled);
-                Navigator.pop(ctx);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.delete, color: Colors.red),
-              title: const Text('Supprimer'),
-              onTap: () {
-                provider.deleteTask(task.id);
+                provider.updateTaskStatus(task.id, TaskStatus.pending);
                 Navigator.pop(ctx);
               },
             ),

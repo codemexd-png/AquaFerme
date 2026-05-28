@@ -15,9 +15,9 @@ class WaterQualityScreen extends StatefulWidget {
 class _WaterQualityScreenState extends State<WaterQualityScreen> {
   String? _selectedEtang;
   final _tempCtrl = TextEditingController();
-  final _phCtrl = TextEditingController();
   final _o2Ctrl = TextEditingController();
   final _couleurCtrl = TextEditingController();
+  bool _isSaving = false;
 
   List<Map<String, dynamic>> _entries = [];
   bool _isLoading = true;
@@ -47,21 +47,58 @@ class _WaterQualityScreenState extends State<WaterQualityScreen> {
   @override
   void dispose() {
     _tempCtrl.dispose();
-    _phCtrl.dispose();
     _o2Ctrl.dispose();
     _couleurCtrl.dispose();
     super.dispose();
   }
 
-  Color _statusColor(double o2, double ph) {
-    if (o2 < 5.0 || ph < 6.5 || ph > 8.5) return Colors.orange;
+  Color _statusColor(double o2) {
+    if (o2 < 5.0) return Colors.orange;
     return Colors.green;
   }
 
-  String _statusLabel(double o2, double ph) {
+  String _statusLabel(double o2) {
     if (o2 < 5.0) return 'O₂ bas';
-    if (ph < 6.5 || ph > 8.5) return 'pH anormal';
     return 'Correct';
+  }
+
+  String _formatDate(String? iso) {
+    if (iso == null || iso.length < 10) return '';
+    final parts = iso.substring(0, 10).split('-');
+    if (parts.length != 3) return iso;
+    return '${parts[2]}/${parts[1]}/${parts[0]}';
+  }
+
+  Future<void> _saveEntry() async {
+    if (_selectedEtang == null) return;
+    final temp = double.tryParse(_tempCtrl.text);
+    final o2 = double.tryParse(_o2Ctrl.text);
+    if (temp == null || o2 == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Veuillez remplir tous les champs numériques.')),
+      );
+      return;
+    }
+    setState(() => _isSaving = true);
+    try {
+      await ApiService.saveWaterQuality(
+        pondId: _selectedEtang!,
+        temperatureC: temp,
+        oxygenMgL: o2,
+        waterColor: _couleurCtrl.text.trim(),
+      );
+      _tempCtrl.clear();
+      _o2Ctrl.clear();
+      _couleurCtrl.clear();
+      setState(() => _selectedEtang = null);
+      await _loadEntries();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur : $e')),
+      );
+    } finally {
+      setState(() => _isSaving = false);
+    }
   }
 
   @override
@@ -117,16 +154,6 @@ class _WaterQualityScreenState extends State<WaterQualityScreen> {
                         keyboardType: TextInputType.number,
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: FieldRow(
-                        icon: Icons.science_outlined,
-                        label: 'pH',
-                        controller: _phCtrl,
-                        hint: 'Ex: 7.2',
-                        keyboardType: TextInputType.number,
-                      ),
-                    ),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -162,8 +189,14 @@ class _WaterQualityScreenState extends State<WaterQualityScreen> {
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10)),
                     ),
-                    onPressed: () {},
-                    icon: const Icon(Icons.add_circle_outline),
+                    onPressed: _isSaving ? null : _saveEntry,
+                    icon: _isSaving
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: Colors.white))
+                        : const Icon(Icons.add_circle_outline),
                     label: const Text('Enregistrer la mesure'),
                   ),
                 ),
@@ -203,12 +236,12 @@ class _WaterQualityScreenState extends State<WaterQualityScreen> {
             )
           else
             ..._entries.map((e) {
-              final o2 = (e['o2'] as num).toDouble();
-              final ph = (e['ph'] as num).toDouble();
+              final o2 = (e['oxygen_mg_l'] as num?)?.toDouble() ?? 0.0;
               return _WaterEntryCard(
                 entry: e,
-                statusColor: _statusColor(o2, ph),
-                statusLabel: _statusLabel(o2, ph),
+                date: _formatDate(e['created_at'] as String?),
+                statusColor: _statusColor(o2),
+                statusLabel: _statusLabel(o2),
               );
             }),
         ],
@@ -221,23 +254,23 @@ class _WaterQualityScreenState extends State<WaterQualityScreen> {
 
 class _WaterEntryCard extends StatelessWidget {
   final Map<String, dynamic> entry;
+  final String date;
   final Color statusColor;
   final String statusLabel;
 
   const _WaterEntryCard(
       {required this.entry,
+      required this.date,
       required this.statusColor,
       required this.statusLabel});
 
   @override
   Widget build(BuildContext context) {
-    final pondId = entry['pondId'] as String? ?? '';
-    final date = entry['date'] as String? ?? '';
-    final o2 = (entry['o2'] as num?)?.toDouble() ?? 0.0;
-    final tempC = (entry['tempC'] as num?)?.toDouble() ?? 0.0;
-    final couleur = entry['couleur'] as String? ?? '';
-    final ph = (entry['ph'] as num?)?.toDouble() ?? 0.0;
-    final agent = entry['agent'] as String? ?? '';
+    final pondId = entry['pond_id'] as String? ?? '';
+    final o2 = (entry['oxygen_mg_l'] as num?)?.toDouble() ?? 0.0;
+    final tempC = (entry['temperature_c'] as num?)?.toDouble() ?? 0.0;
+    final couleur = entry['water_color'] as String? ?? '';
+    final notes = entry['notes'] as String? ?? '';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -279,8 +312,7 @@ class _WaterEntryCard extends StatelessWidget {
                             fontWeight: FontWeight.bold)),
                   ),
                   const SizedBox(width: 8),
-                  Text(date,
-                      style: TextStyle(fontSize: 11, color: Colors.grey[500])),
+                  Text(date, style: TextStyle(fontSize: 11, color: Colors.grey[500])),
                 ],
               ),
             ],
@@ -307,21 +339,22 @@ class _WaterEntryCard extends StatelessWidget {
                   color: Colors.green),
             ],
           ),
-          const SizedBox(height: 6),
-          Row(
-            children: [
-              _Metric(
-                  icon: Icons.science_outlined,
-                  label: 'pH',
-                  value: '$ph',
-                  color: Colors.purple),
-              const SizedBox(width: 16),
-              Icon(Icons.person_outline, size: 13, color: Colors.grey[500]),
-              const SizedBox(width: 4),
-              Text(agent,
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+          if (notes.isNotEmpty) ...
+            [
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  Icon(Icons.notes, size: 13, color: Colors.grey[500]),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(notes,
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis),
+                  ),
+                ],
+              ),
             ],
-          ),
         ],
       ),
     );

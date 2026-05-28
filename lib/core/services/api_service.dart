@@ -44,4 +44,34 @@ class ApiService {
     throw Exception(
         'Erreur serveur (${response.statusCode}) : /water-quality');
   }
+
+  /// POST /water-quality → enregistre une nouvelle mesure
+  static Future<void> saveWaterQuality({
+    required String pondId,
+    required double temperatureC,
+    required double oxygenMgL,
+    required String waterColor,
+    String? notes,
+  }) async {
+    final body = json.encode({
+      'pond_id': pondId,
+      'temperature_c': temperatureC,
+      'oxygen_mg_l': oxygenMgL,
+      'water_color': waterColor,
+      if (notes != null && notes.isNotEmpty) 'notes': notes,
+    });
+
+    final response = await http
+        .post(
+          Uri.parse('$_baseUrl/water-quality'),
+          headers: {'Content-Type': 'application/json'},
+          body: body,
+        )
+        .timeout(const Duration(seconds: 10));
+
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      throw Exception(
+          'Erreur serveur (${response.statusCode}) : POST /water-quality');
+    }
+  }
 }
