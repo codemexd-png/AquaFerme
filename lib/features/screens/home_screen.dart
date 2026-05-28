@@ -47,7 +47,7 @@ class _HomeScreenState extends State<HomeScreen> {
             Icon(Icons.set_meal, color: Colors.lightBlueAccent),
             SizedBox(width: 8),
             Text(
-              'AquaTrack',
+              'Divine alimentation',
               style: TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
@@ -94,9 +94,22 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 22),
           ],
 
-          const Text(
-            'Bonjour, Ibrahima', // Nom mis à jour automatiquement
-            style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+// Titre de bienvenue dynamique avec le nom de l'utilisateur qui se connecte, récupéré depuis le AppProvider
+          Consumer<AppProvider>(
+            builder: (context, provider, _) => Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Bonjour, ${provider.username}',
+                  style: const TextStyle(
+                      fontSize: 28, fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  'Connecté en tant que ${provider.userRole}',
+                  style: const TextStyle(fontSize: 14, color: Colors.grey),
+                ),
+              ],
+            ),
           ),
 
           const SizedBox(height: 5),

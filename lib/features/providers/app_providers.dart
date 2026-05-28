@@ -6,11 +6,39 @@ import 'package:flutter/material.dart'; // Accès au type Color et à ChangeNoti
 import '../task.dart';
 import '../models/pond.dart';
 import '../../core/services/geo_service.dart'; // Import de ton nouveau service géo
+import '../../services/api_service.dart';
 
 class AppProvider extends ChangeNotifier {
   // Permissions utilisateur – à remplacer par un vrai système d'auth plus tard.
-  final bool canEnterData = true;
-  final bool isAdmin = false;
+  String _userRole = 'viewer';
+  String _username = '';
+
+  bool get canEnterData => _userRole == 'admin' || _userRole == 'manager';
+  bool get isAdmin => _userRole == 'admin';
+  String get userRole => _userRole;
+  String get username => _username;
+
+//cette methode est appelée au lancement de l'app pour charger les infos de l'utilisateur connecté
+  Future<void> loadUser() async {
+    try {
+      final data = await ApiService.getMe();
+      if (data != null) {
+        _userRole = data['user']['role'];
+        _username = data['user']['username'];
+        notifyListeners();
+        debugPrint(
+            '----------------------------🚀🚀Rôle chargé : $_userRole ------------------------------');
+      }
+    } catch (e) {
+      debugPrint('Erreur chargement utilisateur : $e');
+    }
+  }
+
+  void resetUser() {
+    _userRole = 'viewer';
+    _username = '';
+    notifyListeners();
+  }
 
   // ==========================================
   // 🛰️ GÉOLOCALISATION & PERMISSIONS

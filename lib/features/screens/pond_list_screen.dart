@@ -213,7 +213,7 @@ class _PondListScreenState extends State<PondListScreen> {
             Icon(Icons.set_meal, color: Colors.lightBlueAccent),
             SizedBox(width: 8),
             Text(
-              'AquaTrack',
+              'Divine alimentation',
               style:
                   TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
             ),

@@ -32,24 +32,40 @@ class ApiService {
       _token = data['token'];
       return _token;
     }
-    return null;//si la connexion échoue, on retourne null
+    return null; //si la connexion échoue, on retourne null
   }
 
-
-// getMe permet de récupérer les informations de l'utilisateur connecté en effectuant 
+// getMe permet de récupérer les informations de l'utilisateur connecté en effectuant
 //une requête GET à l'endpoint /auth/me de l'API.
   static Future<Map<String, dynamic>?> getMe() async {
-  final response = await http.get(
-    Uri.parse('${AppConfig.baseUrl}/auth/me'),
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer $_token',
-    },
-  );
+    final response = await http.get(
+      Uri.parse('${AppConfig.baseUrl}/auth/me'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $_token',
+      },
+    );
 
-  if (response.statusCode == 200) {
-    return jsonDecode(response.body);
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    }
+    return null; //si la requête échoue, on retourne null
   }
-  return null;//si la requête échoue, on retourne null
-}
+
+//getUsers est une méthode statique qui effectue une requête GET à l'endpoint /users de l'API pour récupérer la liste des utilisateurs.
+  static Future<List<dynamic>> getUsers() async {
+    final response = await http.get(
+      Uri.parse('${AppConfig.baseUrl}/users'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $_token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data['users'];
+    }
+    return [];
+  }
 }

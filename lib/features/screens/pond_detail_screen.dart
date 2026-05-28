@@ -6,6 +6,16 @@ import 'package:provider/provider.dart'; // 🛰️ Ajouté pour écouter AppPro
 import '../../widgets/stat_card.dart';
 import '../../features/providers/app_providers.dart'; // Ajuste le chemin selon ton dossier providers
 
+// Fonction utilitaire pour calculer l'âge d'un poisson à partir de sa date de naissance
+String calculateAge(String? birthDate) {
+  if (birthDate == null || birthDate.isEmpty) return 'Non renseigné';
+  final birth = DateTime.parse(birthDate);
+  final days = DateTime.now().difference(birth).inDays;
+  if (days < 30) return '$days jours';
+  if (days < 365) return '${(days / 30).floor()} mois';
+  return '${(days / 365).floor()} an(s) ${((days % 365) / 30).floor()} mois';
+}
+
 class PondDetailScreen extends StatelessWidget {
   // =========================
   // VARIABLES REÇUES
@@ -198,6 +208,10 @@ class PondDetailScreen extends StatelessWidget {
                 _InfoRow(
                   label: 'Taux d’occupation',
                   value: '${percent.toStringAsFixed(1)}%',
+                ),
+                _InfoRow(
+                  label: 'Âge des poissons',
+                  value: calculateAge(pondData!['birth_date'] as String?),
                 ),
                 const _InfoRow(
                   label: 'Dernière MAJ',
