@@ -4,6 +4,10 @@
  * il faut lancer d'abord adb reverse tcp:3000 tcp:3000 qui fait le lien entre le port 3000 de l'ordinateur et le port 3000 du téléphone.
  * Ensuite on peut utiliser http://localhost:3000 pour accéder à l'API depuis le téléphone.
  */
-class AppConfig {
+/*class AppConfig {
   static const String baseUrl = 'http://localhost:3000';
+}*/
+
+class AppConfig {
+  static const String baseUrl = 'http://10.0.0.199:3000';
 }

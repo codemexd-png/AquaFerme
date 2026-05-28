@@ -39,17 +39,51 @@ class ApiService {
 // getMe permet de récupérer les informations de l'utilisateur connecté en effectuant 
 //une requête GET à l'endpoint /auth/me de l'API.
   static Future<Map<String, dynamic>?> getMe() async {
-  final response = await http.get(
-    Uri.parse('${AppConfig.baseUrl}/auth/me'),
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer $_token',
-    },
-  );
+    final response = await http.get(
+      Uri.parse('${AppConfig.baseUrl}/auth/me'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $_token',
+      },
+    );
 
-  if (response.statusCode == 200) {
-    return jsonDecode(response.body);
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    }
+    return null;//si la requête échoue, on retourne null
   }
-  return null;//si la requête échoue, on retourne null
-}
+
+  // Récupérer tous les étangs
+  static Future<List<dynamic>> getPonds() async {
+    final response = await http.get(
+      Uri.parse('${AppConfig.baseUrl}/ponds'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $_token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Erreur chargement des étangs');
+    }
+  }
+
+  // Récupérer un étang par son id
+  static Future<Map<String, dynamic>> getPondById(String id) async {
+    final response = await http.get(
+      Uri.parse('${AppConfig.baseUrl}/ponds/$id'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $_token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Erreur chargement détail étang');
+    }
+  }
 }

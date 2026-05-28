@@ -44,6 +44,8 @@ class OccupancyScreen extends StatelessWidget {
             ['A4', 0, 0, 2250, Colors.green],
             ['A5', 0, 0, 2250, Colors.green],
             ['A6', 0, 0, 2250, Colors.green],
+            ['A7', 0, 0, 2250, Colors.green],
+            ['A8', 0, 0, 2250, Colors.green],
           ],
         ),
 
