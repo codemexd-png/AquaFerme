@@ -32,6 +32,13 @@ class _PondListScreenState extends State<PondListScreen> {
     pondsFuture = ApiService.getPonds();
   }
 
+  // Permet de relancer le chargement en cas d'erreur
+  void _retryLoading() {
+    setState(() {
+      pondsFuture = ApiService.getPonds();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -71,26 +78,45 @@ class _PondListScreenState extends State<PondListScreen> {
       body: FutureBuilder<List<dynamic>>(
         future: pondsFuture,
         builder: (context, snapshot) {
-          // Chargement
+          // Chargement pendant l'appel API
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
+            return const Center(child: CircularProgressIndicator());
           }
 
-          // Erreur
+          // Message d'erreur + bouton pour réessayer
           if (snapshot.hasError) {
             return Center(
-              child: Text(
-                'Erreur : ${snapshot.error}',
-                style: const TextStyle(color: Colors.red),
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.error_outline,
+                      color: Colors.red,
+                      size: 45,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Erreur : ${snapshot.error}',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton.icon(
+                      onPressed: _retryLoading,
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Réessayer'),
+                    ),
+                  ],
+                ),
               ),
             );
           }
 
           final ponds = snapshot.data ?? [];
 
-          // Filtrage par catégorie
+          // Filtrage par secteur : A, B, C ou Barrage
           final filteredPonds = selectedCategory == 'Tous'
               ? ponds
               : ponds
@@ -114,7 +140,9 @@ class _PondListScreenState extends State<PondListScreen> {
                     _filterButton('A'),
                     _filterButton('B'),
                     _filterButton('C'),
-                    _filterButton('D'),
+
+                    // Correction demandée : D n'est plus utilisé ici
+                    _filterButton('Barrage'),
                   ],
                 ),
               ),
@@ -140,13 +168,23 @@ class _PondListScreenState extends State<PondListScreen> {
 
               const SizedBox(height: 18),
 
+              if (filteredPonds.isEmpty)
+                const Center(
+                  child: Padding(
+                    padding: EdgeInsets.only(top: 40),
+                    child: Text(
+                      'Aucun étang trouvé pour ce filtre.',
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  ),
+                ),
+
               ...filteredPonds.map((pond) {
                 final int currentFish = pond['current_fish_count'] ?? 0;
                 final int maxCapacity = pond['max_capacity'] ?? 1;
 
-                final double percent = maxCapacity > 0
-                    ? (currentFish / maxCapacity) * 100
-                    : 0.0;
+                final double percent =
+                    maxCapacity > 0 ? (currentFish / maxCapacity) * 100 : 0.0;
 
                 final Color color = percent >= 90
                     ? Colors.red
@@ -226,16 +264,15 @@ class _PondCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Si le backend envoie "Étang A1", on garde seulement "A1".
+    // Si le backend envoie déjà "A1", on garde "A1".
     final pondCode = name.replaceAll('Étang ', '');
 
     return InkWell(
       borderRadius: BorderRadius.circular(20),
-
-      // Navigation vers le détail avec l'id réel
       onTap: () {
         context.push('/pond/$id');
       },
-
       child: Container(
         margin: const EdgeInsets.only(bottom: 14),
         padding: const EdgeInsets.all(14),

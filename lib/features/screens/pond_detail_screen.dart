@@ -114,7 +114,7 @@ class PondDetailScreen extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                name.startsWith('Étang') ? name : 'Étang $name',
+                                name.replaceAll('Étang ', ''),
                                 style: const TextStyle(
                                   fontSize: 26,
                                   fontWeight: FontWeight.bold,

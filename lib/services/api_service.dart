@@ -54,9 +54,13 @@ class ApiService {
   }
 
   // Récupérer tous les étangs
-  static Future<List<dynamic>> getPonds() async {
+  static Future<List<dynamic>> getPonds({String? category}) async {
+    final url = category == null
+        ? '${AppConfig.baseUrl}/ponds'
+        : '${AppConfig.baseUrl}/ponds?category=$category';
+
     final response = await http.get(
-      Uri.parse('${AppConfig.baseUrl}/ponds'),
+      Uri.parse(url),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $_token',
@@ -65,12 +69,11 @@ class ApiService {
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
-    } else {
-      throw Exception('Erreur chargement des étangs');
     }
+
+    throw Exception('Erreur chargement étangs');
   }
 
-  // Récupérer un étang par son id
   static Future<Map<String, dynamic>> getPondById(String id) async {
     final response = await http.get(
       Uri.parse('${AppConfig.baseUrl}/ponds/$id'),
@@ -82,8 +85,8 @@ class ApiService {
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
-    } else {
-      throw Exception('Erreur chargement détail étang');
     }
+
+    throw Exception('Erreur chargement détail étang');
   }
 }
