@@ -14,8 +14,8 @@ class Task {
   final String description;
   final DateTime scheduledDate;
   final TaskPriority priority;
-  TaskStatus status;          // mutable : peut évoluer via AppProvider
-  final String? assignedTo;  // nom de l'employé ou null si non assigné
+  TaskStatus status; // mutable : peut évoluer via AppProvider
+  final String? assignedTo; // nom de l'employé ou null si non assigné
 
   Task({
     required this.id,
@@ -32,23 +32,23 @@ class Task {
       id: json['id'].toString(),
       title: json['title'] as String,
       description: json['description'] as String? ?? '',
-      scheduledDate: DateTime.parse(json['scheduledDate'] as String),
+      scheduledDate: DateTime.parse(json['task_date'] as String),
       priority: _parsePriority(json['priority'] as String? ?? 'medium'),
       status: _parseStatus(json['status'] as String? ?? 'pending'),
-      assignedTo: json['assignedTo'] as String?,
+      assignedTo: json['assigned_to']?.toString(),
     );
   }
 
   static TaskPriority _parsePriority(String s) => switch (s) {
         'urgent' => TaskPriority.urgent,
-        'high' => TaskPriority.high,
-        'low' => TaskPriority.low,
+        'haute' => TaskPriority.high,
+        'basse' => TaskPriority.low,
         _ => TaskPriority.medium,
       };
 
   static TaskStatus _parseStatus(String s) => switch (s) {
         'inProgress' => TaskStatus.inProgress,
-        'completed' => TaskStatus.completed,
+        'done' => TaskStatus.completed,
         'cancelled' => TaskStatus.cancelled,
         _ => TaskStatus.pending,
       };

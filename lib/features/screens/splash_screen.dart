@@ -293,9 +293,9 @@ class _SplashViewState extends State<SplashView> with TickerProviderStateMixin {
 
                   SizedBox(height: size.height * 0.04),
 
-                  // ─── AquaTrack ──────────────────────────────────────────
+                  // ─── Divine alimentation ──────────────────────────────────────────
                   const Text(
-                    'AquaTrack',
+                    'Divine alimentation',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 36,

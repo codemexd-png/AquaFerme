@@ -5,10 +5,18 @@
 
 import 'package:flutter/material.dart';
 import 'screen_shared.dart';
-
+import '../../services/api_service.dart';
 // ─── Écran Création de tâche ──────────────────────────────────────────────────
 
-const _categories = ['Pêche de contrôle', 'Qualité eau', 'Nutrition', 'Nettoyage', 'Transfert', 'Mortalité', 'Autre'];
+const _categories = [
+  'Pêche de contrôle',
+  'Qualité eau',
+  'Nutrition',
+  'Nettoyage',
+  'Transfert',
+  'Mortalité',
+  'Autre'
+];
 const _priorites = ['Haute', 'Moyenne', 'Basse'];
 
 class AddTaskScreen extends StatefulWidget {
@@ -26,8 +34,26 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   final _titreCtrl = TextEditingController();
   final _descCtrl = TextEditingController();
   final _dateCtrl = TextEditingController();
-  // Options mémorisées entre les utilisations (session en cours)
-  static final _agentOptions = <String>[];
+  
+
+  List<dynamic> _users = []; // Liste des utilisateurs récupérée depuis l'API
+  bool _isLoadingUsers =
+      false; // Indicateur de chargement pour les utilisateurs
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUsers();
+  }
+
+  Future<void> _loadUsers() async {
+    setState(() => _isLoadingUsers = true);
+    final users = await ApiService.getUsers();
+    setState(() {
+      _users = users;
+      _isLoadingUsers = false;
+    });
+  }
 
   @override
   void dispose() {
@@ -63,9 +89,9 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
         ),
         title: const Text(
           'Créer une tâche',
-          style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 16),
+          style: TextStyle(
+              color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 16),
         ),
-
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -114,9 +140,12 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.calendar_today_outlined, size: 16, color: Colors.grey[600]),
+                        Icon(Icons.calendar_today_outlined,
+                            size: 16, color: Colors.grey[600]),
                         const SizedBox(width: 6),
-                        Text('Date prévue', style: TextStyle(fontSize: 13, color: Colors.grey[700])),
+                        Text('Date prévue',
+                            style: TextStyle(
+                                fontSize: 13, color: Colors.grey[700])),
                       ],
                     ),
                     const SizedBox(height: 6),
@@ -124,8 +153,10 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                       controller: _dateCtrl,
                       readOnly: true,
                       onTap: _pickDate,
-                      decoration: screenInputDecoration('Ex: 21/05/2026').copyWith(
-                        suffixIcon: const Icon(Icons.calendar_month_outlined, color: Color(0xFF1565C0)),
+                      decoration:
+                          screenInputDecoration('Ex: 21/05/2026').copyWith(
+                        suffixIcon: const Icon(Icons.calendar_month_outlined,
+                            color: Color(0xFF1565C0)),
                       ),
                     ),
                   ],
@@ -145,35 +176,30 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.person_outline, size: 16, color: Colors.grey[600]),
+                        Icon(Icons.person_outline,
+                            size: 16, color: Colors.grey[600]),
                         const SizedBox(width: 6),
-                        Text('Assigner à', style: TextStyle(fontSize: 13, color: Colors.grey[700])),
+                        Text('Assigner à',
+                            style: TextStyle(
+                                fontSize: 13, color: Colors.grey[700])),
                       ],
                     ),
                     const SizedBox(height: 6),
-                    Autocomplete<String>(
-                      optionsBuilder: (TextEditingValue tv) {
-                        if (tv.text.isEmpty) return _agentOptions;
-                        return _agentOptions.where(
-                          (a) => a.toLowerCase().contains(tv.text.toLowerCase()),
-                        );
-                      },
-                      onSelected: (s) => setState(() => _selectedAgent = s),
-                      fieldViewBuilder: (context, ctrl, focusNode, onSubmitted) => TextField(
-                        controller: ctrl,
-                        focusNode: focusNode,
-                        decoration: screenInputDecoration('Ex: Ibrahim'),
-                        onChanged: (v) => setState(() => _selectedAgent = v),
-                        onSubmitted: (_) {
-                          final name = ctrl.text.trim();
-                          if (name.isNotEmpty && !_agentOptions.contains(name)) {
-                            _agentOptions.add(name);
-                          }
-                          setState(() => _selectedAgent = name);
-                          onSubmitted();
-                        },
-                      ),
-                    ),
+                    _isLoadingUsers
+                        ? const Center(child: CircularProgressIndicator())
+                        : DropdownButtonFormField<String>(
+                            value: _selectedAgent,
+                            decoration: screenInputDecoration(
+                                'Sélectionner un employé'),
+                            items: _users.map((user) {
+                              return DropdownMenuItem<String>(
+                                value: user['id'].toString(),
+                                child: Text(user['username']),
+                              );
+                            }).toList(),
+                            onChanged: (v) =>
+                                setState(() => _selectedAgent = v),
+                          ),
                   ],
                 ),
               ],
@@ -187,7 +213,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
             child: TextField(
               controller: _descCtrl,
               maxLines: 4,
-              decoration: screenInputDecoration('Détails de la tâche à effectuer...'),
+              decoration:
+                  screenInputDecoration('Détails de la tâche à effectuer...'),
             ),
           ),
           const SizedBox(height: 24),
@@ -199,11 +226,13 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
               style: FilledButton.styleFrom(
                 backgroundColor: const Color(0xFF1565C0),
                 padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10)),
               ),
               onPressed: () {},
               icon: const Icon(Icons.playlist_add_check_circle_outlined),
-              label: const Text('Créer la tâche', style: TextStyle(fontSize: 15)),
+              label:
+                  const Text('Créer la tâche', style: TextStyle(fontSize: 15)),
             ),
           ),
         ],
@@ -240,14 +269,17 @@ class _LabeledDropdown extends StatelessWidget {
           children: [
             Icon(icon, size: 16, color: Colors.grey[600]),
             const SizedBox(width: 6),
-            Text(label, style: TextStyle(fontSize: 13, color: Colors.grey[700])),
+            Text(label,
+                style: TextStyle(fontSize: 13, color: Colors.grey[700])),
           ],
         ),
         const SizedBox(height: 6),
         DropdownButtonFormField<String>(
           value: value,
           decoration: screenInputDecoration(hint),
-          items: items.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+          items: items
+              .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+              .toList(),
           onChanged: onChanged,
         ),
       ],

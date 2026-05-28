@@ -32,11 +32,10 @@ class ApiService {
       _token = data['token'];
       return _token;
     }
-    return null;//si la connexion échoue, on retourne null
+    return null; //si la connexion échoue, on retourne null
   }
 
-
-// getMe permet de récupérer les informations de l'utilisateur connecté en effectuant 
+// getMe permet de récupérer les informations de l'utilisateur connecté en effectuant
 //une requête GET à l'endpoint /auth/me de l'API.
   static Future<Map<String, dynamic>?> getMe() async {
     final response = await http.get(
@@ -50,7 +49,7 @@ class ApiService {
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     }
-    return null;//si la requête échoue, on retourne null
+    return null; //si la requête échoue, on retourne null
   }
 
   // Récupérer tous les étangs
@@ -74,6 +73,23 @@ class ApiService {
     throw Exception('Erreur chargement étangs');
   }
 
+  // Récupérer tous les utilisateurs (pour l'assignation des tâches)
+  static Future<List<dynamic>> getUsers() async {
+    final response = await http.get(
+      Uri.parse('${AppConfig.baseUrl}/users'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $_token'
+      },
+    );
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data['users'];
+    }
+    return [];
+  }
+
+  // Récupérer un étang par son ID
   static Future<Map<String, dynamic>> getPondById(String id) async {
     final response = await http.get(
       Uri.parse('${AppConfig.baseUrl}/ponds/$id'),
@@ -88,5 +104,21 @@ class ApiService {
     }
 
     throw Exception('Erreur chargement détail étang');
+  }
+
+  // Récupérer toutes les tâches (utilisé par AppProvider)
+  static Future<List<dynamic>> fetchTasks() async {
+    final response = await http.get(
+      Uri.parse('${AppConfig.baseUrl}/tasks'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $_token',
+      },
+    );
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data['tasks'];
+    }
+    return [];
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_providers.dart';
+import '../../services/api_service.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -155,11 +156,11 @@ class SettingsScreen extends StatelessWidget {
 
           const SizedBox(height: 32),
 
-          // ─── Se déconnecter ────────────────────────────────────────────────
           GestureDetector(
             onTap: () {
-              // TODO : logique de déconnexion
-              context.go('/');
+              ApiService.setToken('');
+              context.read<AppProvider>().resetUser();
+              context.go('/login');
             },
             child: const Row(
               children: [

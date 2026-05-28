@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../services/api_service.dart';
+import 'package:provider/provider.dart';
+import '../providers/app_providers.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -42,13 +44,13 @@ class _LoginScreenState extends State<LoginScreen> {
     );
 
     setState(() => _isLoading = false);
-
-    if (token != null) {
-      // Connexion réussie → naviguer vers l'accueil
-      if (context.mounted) {
-        context.go('/home');
-      }
-    } else {
+//  Si la connexion est réussie, on charge les infos de l'utilisateur et on navigue vers l'écran d'accueil
+   if (token != null) {
+  if (context.mounted) {
+    await context.read<AppProvider>().loadUser();
+    context.go('/home');
+  }
+} else {
       // Mauvais identifiants
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -127,7 +129,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                       // ─── Titre ───────────────────────────────────────
                       const Text(
-                        'AquaTrack',
+                        'Divine alimentation',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 28,

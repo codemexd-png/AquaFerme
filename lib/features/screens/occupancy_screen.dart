@@ -385,7 +385,7 @@ class OccupancyPage extends StatelessWidget {
             Icon(Icons.set_meal, color: Color(0xFF1565C0), size: 26),
             SizedBox(width: 6),
             Text(
-              'AquaTrack',
+              'Divine alimentation',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 color: Color(0xFF1565C0),
