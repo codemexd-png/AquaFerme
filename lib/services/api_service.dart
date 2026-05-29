@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../config/config.dart';
+import 'package:flutter/material.dart';
 
 //ce srvice permet de gérer les appels API
 class ApiService {
@@ -16,23 +17,24 @@ class ApiService {
 //effectue une requête POST à l'endpoint de connexion de l'API,
 //et retourne le token d'authentification si la connexion est réussie.
   static Future<String?> login(String username, String password) async {
-    //on dit à flutter qu'il faut envoyer une requete POSTpour les données de connexion
-    // à l'endpoint de connexion de l'API
-    final response = await http.post(
-      Uri.parse('${AppConfig.baseUrl}/auth/login'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'username': username, 'password': password}),
-    );
+    try {
+      final response = await http
+          .post(
+            Uri.parse('${AppConfig.baseUrl}/auth/login'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'username': username, 'password': password}),
+          )
+          .timeout(const Duration(seconds: 4));
 
-    //si la réponse de l'API est 200, cela signifie que la connexion a réussi,
-    //et on retourne le token d'authentification extrait de la réponse JSON.
-
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      _token = data['token'];
-      return _token;
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        _token = data['token'];
+        return _token;
+      }
+      return null;
+    } catch (e) {
+      return null; // timeout ou erreur réseau → retourne null proprement
     }
-    return null; //si la connexion échoue, on retourne null
   }
 
 // getMe permet de récupérer les informations de l'utilisateur connecté en effectuant
@@ -120,5 +122,20 @@ class ApiService {
       return data['tasks'];
     }
     return [];
+  }
+
+  static Map<String, dynamic>? decodeToken() {
+    if (_token == null) return null;
+    try {
+      final parts = _token!.split('.');
+      if (parts.length != 3) return null;
+      final payload = parts[1];
+      final normalized = base64Url.normalize(payload);
+      final decoded = utf8.decode(base64Url.decode(normalized));
+      return jsonDecode(decoded) as Map<String, dynamic>;
+    } catch (e) {
+      debugPrint('Erreur décodage JWT : $e');
+      return null;
+    }
   }
 }

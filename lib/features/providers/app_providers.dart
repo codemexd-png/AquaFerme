@@ -26,19 +26,18 @@ class AppProvider extends ChangeNotifier {
   bool get isAdmin => _userRole == 'admin';
  
   /// Charge le profil de l'utilisateur connecté depuis /auth/me
-  Future<void> loadUser() async {
-    try {
-      final data = await ApiService.getMe();
-      if (data != null) {
-        _userRole = data['role'] as String?;
-        _username = data['username'] as String?;
-        notifyListeners();
-      }
-    } catch (e) {
-      debugPrint('Erreur chargement profil utilisateur : $e');
+ Future<void> loadUser() async {
+  try {
+    final payload = ApiService.decodeToken();
+    if (payload != null) {
+      _userRole = payload['role'] as String?;
+      _username = payload['username'] as String?;
+      notifyListeners();
     }
+  } catch (e) {
+    debugPrint('Erreur décodage token : $e');
   }
- 
+}
   /// Réinitialise les données utilisateur lors de la déconnexion
   void resetUser() {
     _userRole = null;

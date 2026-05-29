@@ -35,34 +35,41 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-// Appel de la méthode de connexion de l'API
     setState(() => _isLoading = true);
 
-    final token = await ApiService.login(
-      _usernameController.text.trim(),
-      _passwordController.text.trim(),
-    );
+    try {
+      final token = await ApiService.login(
+        _usernameController.text.trim(),
+        _passwordController.text.trim(),
+      );
 
-    setState(() => _isLoading = false);
-//  Si la connexion est réussie, on charge les infos de l'utilisateur et on navigue vers l'écran d'accueil
-   if (token != null) {
-  if (context.mounted) {
-    await context.read<AppProvider>().loadUser();
-    context.go('/home');
-  }
-} else {
-      // Mauvais identifiants
+      if (token != null) {
+        if (context.mounted) {
+          await context.read<AppProvider>().loadUser();
+          context.go('/home');
+        }
+      } else {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Identifiants incorrects.'),
+              backgroundColor: Colors.redAccent,
+            ),
+          );
+        }
+      }
+    } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Identifiants incorrects.'),
+          SnackBar(
+            content: Text('Erreur de connexion : vérifiez le réseau.'),
             backgroundColor: Colors.redAccent,
           ),
         );
       }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
-
-  
   }
 
   @override

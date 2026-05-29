@@ -15,8 +15,7 @@ dependencies:
   provider: ^6.1.0
   intl: ^0.19.0
 
-  # Requêtes HTTP vers le backend
-  http: ^1.2.0
+  
 
   # Géolocalisation & Permissions (Cœur de tes tâches de vendredi)
   geolocator: ^11.0.0
