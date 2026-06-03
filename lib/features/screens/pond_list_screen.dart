@@ -43,7 +43,6 @@ class _PondListScreenState extends State<PondListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF4F8FB),
-
       appBar: AppBar(
         automaticallyImplyLeading: false,
         backgroundColor: const Color(0xFF0D47A1),
@@ -54,8 +53,9 @@ class _PondListScreenState extends State<PondListScreen> {
             Icon(Icons.set_meal, color: Colors.lightBlueAccent),
             SizedBox(width: 8),
             Text(
-              'AquaTrack',
-              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              'Divine Alimentation',
+              style:
+                  TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
             ),
           ],
         ),
@@ -74,7 +74,6 @@ class _PondListScreenState extends State<PondListScreen> {
           const SizedBox(width: 12),
         ],
       ),
-
       body: FutureBuilder<List<dynamic>>(
         future: pondsFuture,
         builder: (context, snapshot) {
@@ -287,7 +286,6 @@ class _PondCard extends StatelessWidget {
             ),
           ],
         ),
-
         child: Row(
           children: [
             Container(
@@ -308,9 +306,7 @@ class _PondCard extends StatelessWidget {
                 ),
               ),
             ),
-
             const SizedBox(width: 14),
-
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -338,7 +334,6 @@ class _PondCard extends StatelessWidget {
                 ],
               ),
             ),
-
             OccupationGauge(
               percent: percent,
               color: color,

@@ -19,7 +19,7 @@ class _SplashViewState extends State<SplashView> with TickerProviderStateMixin {
     super.initState();
 
     // Redirection vers login après 4 secondes
-    Future.delayed(const Duration(seconds: 10), () {
+    Future.delayed(const Duration(seconds: 4), () {
       if (mounted) context.go('/login');
     });
 

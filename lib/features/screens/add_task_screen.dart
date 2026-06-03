@@ -1,12 +1,7 @@
 // ─── Écran Création de tâche ─────────────────────────────────────────────────
-// Formulaire permettant de créer une nouvelle tâche de planning.
-// Champ "Assigner à" : Autocomplete avec saisie libre et mémorisation des noms.
-// Ouvert via Navigator.push depuis PlanningScreen (pas via GoRouter : pas de route dédiée).
-
 import 'package:flutter/material.dart';
 import 'screen_shared.dart';
 import '../../services/api_service.dart';
-// ─── Écran Création de tâche ──────────────────────────────────────────────────
 
 const _categories = [
   'Pêche de contrôle',
@@ -27,23 +22,26 @@ class AddTaskScreen extends StatefulWidget {
 }
 
 class _AddTaskScreenState extends State<AddTaskScreen> {
-  String? _selectedEtang;
+  String? _selectedPondId;
   String? _selectedCategorie;
   String? _selectedPriorite;
   String? _selectedAgent;
+
   final _titreCtrl = TextEditingController();
   final _descCtrl = TextEditingController();
   final _dateCtrl = TextEditingController();
-  
 
-  List<dynamic> _users = []; // Liste des utilisateurs récupérée depuis l'API
-  bool _isLoadingUsers =
-      false; // Indicateur de chargement pour les utilisateurs
+  List<dynamic> _users = [];
+  List<dynamic> _ponds = [];
+  bool _isLoadingUsers = false;
+  bool _isLoadingPonds = false;
+  bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
     _loadUsers();
+    _loadPonds();
   }
 
   Future<void> _loadUsers() async {
@@ -53,6 +51,19 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
       _users = users;
       _isLoadingUsers = false;
     });
+  }
+
+  Future<void> _loadPonds() async {
+    setState(() => _isLoadingPonds = true);
+    try {
+      final ponds = await ApiService.getPonds();
+      setState(() {
+        _ponds = ponds;
+        _isLoadingPonds = false;
+      });
+    } catch (_) {
+      setState(() => _isLoadingPonds = false);
+    }
   }
 
   @override
@@ -74,6 +85,66 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
       _dateCtrl.text =
           '${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}';
     }
+  }
+
+  // Convertit DD/MM/YYYY → YYYY-MM-DD pour le backend
+  String _convertDate(String ddmmyyyy) {
+    final parts = ddmmyyyy.split('/');
+    return '${parts[2]}-${parts[1]}-${parts[0]}';
+  }
+
+  Future<void> _createTask() async {
+    // Validation
+    if (_titreCtrl.text.trim().isEmpty) {
+      _showError('Le titre est obligatoire.');
+      return;
+    }
+    if (_selectedCategorie == null) {
+      _showError('Sélectionne une catégorie.');
+      return;
+    }
+    if (_dateCtrl.text.isEmpty) {
+      _showError('La date est obligatoire.');
+      return;
+    }
+    if (_selectedPriorite == null) {
+      _showError('Sélectionne une priorité.');
+      return;
+    }
+
+    setState(() => _isSaving = true);
+
+    try {
+      await ApiService.createTask(
+        title: _titreCtrl.text.trim(),
+        pondId: _selectedPondId,
+        taskDate: _convertDate(_dateCtrl.text),
+        priority: _selectedPriorite!.toLowerCase(),
+        assignedTo: _selectedAgent,
+        description:
+            _descCtrl.text.trim().isEmpty ? null : _descCtrl.text.trim(),
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Tâche créée avec succès ✓'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.pop(context, true); // true = refresh la liste
+      }
+    } catch (e) {
+      if (mounted) _showError('Erreur : $e');
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
+  }
+
+  void _showError(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg), backgroundColor: Colors.red),
+    );
   }
 
   @override
@@ -117,13 +188,44 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                   onChanged: (v) => setState(() => _selectedCategorie = v),
                 ),
                 const SizedBox(height: 12),
-                _LabeledDropdown(
-                  label: 'Étang cible',
-                  icon: Icons.water_outlined,
-                  value: _selectedEtang,
-                  items: etangs.map((e) => 'Étang $e').toList(),
-                  hint: 'Sélectionner un étang',
-                  onChanged: (v) => setState(() => _selectedEtang = v),
+                // Étang cible — chargé depuis l'API
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.water_outlined,
+                            size: 16, color: Colors.grey[600]),
+                        const SizedBox(width: 6),
+                        Text('Étang cible (optionnel)',
+                            style: TextStyle(
+                                fontSize: 13, color: Colors.grey[700])),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    _isLoadingPonds
+                        ? const Center(child: CircularProgressIndicator())
+                        : DropdownButtonFormField<String>(
+                            value: _selectedPondId,
+                            decoration:
+                                screenInputDecoration('Sélectionner un étang'),
+                            items: [
+                              const DropdownMenuItem(
+                                value: null,
+                                child: Text('Aucun étang'),
+                              ),
+                              ..._ponds.map((pond) {
+                                return DropdownMenuItem<String>(
+                                  value: pond['id'].toString(),
+                                  child: Text(
+                                      pond['name'] ?? 'Étang ${pond['id']}'),
+                                );
+                              }),
+                            ],
+                            onChanged: (v) =>
+                                setState(() => _selectedPondId = v),
+                          ),
+                  ],
                 ),
               ],
             ),
@@ -229,12 +331,22 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10)),
               ),
-              onPressed: () {},
-              icon: const Icon(Icons.playlist_add_check_circle_outlined),
-              label:
-                  const Text('Créer la tâche', style: TextStyle(fontSize: 15)),
+              onPressed: _isSaving ? null : _createTask,
+              icon: _isSaving
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Icon(Icons.playlist_add_check_circle_outlined),
+              label: Text(
+                _isSaving ? 'Enregistrement...' : 'Créer la tâche',
+                style: const TextStyle(fontSize: 15),
+              ),
             ),
           ),
+          const SizedBox(height: 24),
         ],
       ),
     );

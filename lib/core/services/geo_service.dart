@@ -14,7 +14,7 @@ class GeoService {
     bool serviceEnabled;
     LocationPermission permission;
     // En mode debug, on considère que l'utilisateur est toujours sur le site pour faciliter les tests.
-    //if (kDebugMode) return true;
+    if (kDebugMode) return true;
     // 1. Vérifier si le service de localisation du téléphone est activé
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {

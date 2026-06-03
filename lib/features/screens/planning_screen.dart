@@ -10,6 +10,7 @@ import '../task.dart';
 import 'add_task_screen.dart';
 import 'package:go_router/go_router.dart';
 import 'screen_shared.dart';
+import '../../widgets/notification_bell.dart';
 
 class PlanningScreen extends StatefulWidget {
   const PlanningScreen({super.key});
@@ -169,10 +170,16 @@ class _PlanningScreenState extends State<PlanningScreen>
                   width: double.infinity,
                   height: 48,
                   child: ElevatedButton.icon(
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const AddTaskScreen()),
-                    ),
+                    onPressed: () async {
+                      final created = await Navigator.push<bool>(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const AddTaskScreen()),
+                      );
+                      if (created == true && context.mounted) {
+                        context.read<AppProvider>().loadTasks();
+                      }
+                    },
                     icon: const Icon(Icons.add),
                     label: const Text('Ajouter une tâche'),
                     style: ElevatedButton.styleFrom(
@@ -454,10 +461,7 @@ class PlanningPage extends StatelessWidget {
           ],
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_none, color: Colors.black87),
-            onPressed: () {},
-          ),
+          const NotificationBell(iconColor: Colors.black87),
           IconButton(
             icon: const Icon(Icons.settings_outlined,
                 color: Color.fromARGB(255, 10, 10, 10)),
