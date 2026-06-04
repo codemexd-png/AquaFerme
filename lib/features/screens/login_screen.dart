@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/services/api_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -21,7 +22,7 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void _handleLogin() {
+  void _handleLogin() async {
     if (_usernameController.text.isEmpty || _passwordController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -34,13 +35,24 @@ class _LoginScreenState extends State<LoginScreen> {
 
     setState(() => _isLoading = true);
 
-    // Simulation délai réseau — à remplacer par l'appel API
-    Future.delayed(const Duration(seconds: 1), () {
+    try {
+      await ApiService.login(
+        _usernameController.text.trim(),
+        _passwordController.text,
+      );
+      if (mounted) context.go('/home');
+    } catch (e) {
       if (mounted) {
-        setState(() => _isLoading = false);
-        context.go('/home');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString().replaceFirst('Exception: ', '')),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
       }
-    });
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override
