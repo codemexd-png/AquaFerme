@@ -109,9 +109,13 @@ class ApiService {
   }
 
   // Récupérer toutes les tâches (utilisé par AppProvider)
-  static Future<List<dynamic>> fetchTasks() async {
+  static Future<List<dynamic>> fetchTasks({String? assignedTo}) async {
+    //  permet de filtrer les tâches par l'utilisateur assigné
+    final url = assignedTo != null
+        ? '${AppConfig.baseUrl}/tasks?assigned_to=$assignedTo'
+        : '${AppConfig.baseUrl}/tasks';
     final response = await http.get(
-      Uri.parse('${AppConfig.baseUrl}/tasks'),
+      Uri.parse(url),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $_token',
@@ -288,7 +292,7 @@ class ApiService {
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     }
-    throw Exception('Erreur chargement dashboard');
+    throw Exception('Erreur ${response.statusCode} : ${response.body}');
   }
 
   static Future<List<dynamic>> getNotifications() async {

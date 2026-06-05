@@ -126,12 +126,23 @@ class _HomeScreenState extends State<HomeScreen> {
               }
               if (snapshot.hasError) {
                 return SizedBox(
-                  height: 80,
+                  height: 100,
                   child: Center(
-                    child: TextButton.icon(
-                      onPressed: _refresh,
-                      icon: const Icon(Icons.refresh),
-                      label: const Text('Réessayer'),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          '${snapshot.error}',
+                          style:
+                              const TextStyle(color: Colors.red, fontSize: 11),
+                          textAlign: TextAlign.center,
+                        ),
+                        TextButton.icon(
+                          onPressed: _refresh,
+                          icon: const Icon(Icons.refresh),
+                          label: const Text('Réessayer'),
+                        ),
+                      ],
                     ),
                   ),
                 );

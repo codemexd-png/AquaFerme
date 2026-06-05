@@ -164,32 +164,38 @@ class _PlanningScreenState extends State<PlanningScreen>
 
             // FAB area
             if (provider.canEnterData || provider.isAdmin)
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: ElevatedButton.icon(
-                    onPressed: () async {
-                      final created = await Navigator.push<bool>(
-                        context,
-                        MaterialPageRoute(
-                            builder: (_) => const AddTaskScreen()),
-                      );
-                      if (created == true && context.mounted) {
-                        context.read<AppProvider>().loadTasks();
-                      }
-                    },
-                    icon: const Icon(Icons.add),
-                    label: const Text('Ajouter une tâche'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF00897B),
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
+              Consumer<AppProvider>(
+                builder: (context, appProvider, _) {
+                  if (appProvider.userRole == 'employee')
+                    return const SizedBox.shrink();
+                  return Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: ElevatedButton.icon(
+                        onPressed: () async {
+                          final created = await Navigator.push<bool>(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) => const AddTaskScreen()),
+                          );
+                          if (created == true && context.mounted) {
+                            context.read<AppProvider>().loadTasks();
+                          }
+                        },
+                        icon: const Icon(Icons.add),
+                        label: const Text('Ajouter une tâche'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF00897B),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                        ),
+                      ),
                     ),
-                  ),
-                ),
+                  );
+                },
               ),
           ],
         );

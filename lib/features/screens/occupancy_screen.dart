@@ -382,7 +382,7 @@ class _PondCard extends StatelessWidget {
     final shortName = name.replaceAll('Étang ', '');
 
     return GestureDetector(
-      onTap: () => context.push('/pond-detail/$pondId'),
+      onTap: () => context.push('/pond/$pondId'),
       child: Container(
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
@@ -450,8 +450,7 @@ class OccupancyPage extends StatelessWidget {
           ],
         ),
         actions: [
-         const NotificationBell(iconColor: Colors.black87),
-
+          const NotificationBell(iconColor: Colors.black87),
           IconButton(
             icon: const Icon(Icons.settings_outlined, color: Colors.black87),
             onPressed: () => context.push('/settings'),
