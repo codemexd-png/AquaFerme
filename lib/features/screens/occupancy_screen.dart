@@ -1,125 +1,244 @@
 import 'package:flutter/material.dart';
 import '../../widgets/occupation_gauge.dart';
+import '../../services/api_service.dart';
 import 'package:go_router/go_router.dart';
+import '../../widgets/notification_bell.dart';
 
-// ─── Écran Contenu Seul ──────────────────────────────────────────────────────
-// Contient la liste et les grilles d'occupation. Idéal pour être appelé dans ton index principal.
-class OccupancyScreen extends StatelessWidget {
+// ─── Écran Occupation ────────────────────────────────────────────────────────
+
+class OccupancyScreen extends StatefulWidget {
   const OccupancyScreen({super.key});
 
   @override
+  State<OccupancyScreen> createState() => _OccupancyScreenState();
+}
+
+class _OccupancyScreenState extends State<OccupancyScreen> {
+  late Future<List<dynamic>> _pondsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _pondsFuture = ApiService.getPonds();
+  }
+
+  void _refresh() {
+    setState(() {
+      _pondsFuture = ApiService.getPonds();
+    });
+  }
+
+  Color _colorForPercent(double percent) {
+    if (percent >= 90) return Colors.red;
+    if (percent >= 70) return Colors.orange;
+    if (percent == 0) return Colors.grey;
+    return Colors.green;
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: const [
-        // =========================
-        // OCCUPATION GLOBALE
-        // =========================
-        GlobalCard(),
+    return FutureBuilder<List<dynamic>>(
+      future: _pondsFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
 
-        SizedBox(height: 18),
+        if (snapshot.hasError) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.cloud_off, color: Colors.grey, size: 48),
+                const SizedBox(height: 12),
+                Text('Erreur de chargement',
+                    style: TextStyle(color: Colors.grey[600])),
+                const SizedBox(height: 8),
+                TextButton.icon(
+                  onPressed: _refresh,
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Réessayer'),
+                ),
+              ],
+            ),
+          );
+        }
 
-        // =========================
-        // REGLE
-        // =========================
-        DensityCard(),
+        final allPonds = snapshot.data!;
 
-        SizedBox(height: 20),
+        // Séparer barrage et étangs normaux
+        final ponds =
+            allPonds.where((p) => p['pond_group'] != 'Barrage').toList();
+        final barrages =
+            allPonds.where((p) => p['pond_group'] == 'Barrage').toList();
 
-        // =========================
-        // ETANGS A
-        // =========================
-        SectionTitle(
-          title: 'Étangs A - 900 m²',
-          color: Colors.blue,
-        ),
+        // Calcul stats globales
+        int totalFish = 0;
+        int totalCapacity = 0;
+        for (final p in ponds) {
+          totalFish += int.tryParse(p['current_fish_count'].toString()) ?? 0;
+          totalCapacity += int.tryParse(p['max_capacity'].toString()) ?? 0;
+        }
+        final double globalPercent =
+            totalCapacity > 0 ? (totalFish / totalCapacity) * 100 : 0;
 
-        SizedBox(height: 12),
+        // Grouper par pond_group
+        final groups = <String, List<dynamic>>{};
+        for (final p in ponds) {
+          final group = p['pond_group'] as String? ?? '?';
+          groups.putIfAbsent(group, () => []).add(p);
+        }
+        final sortedGroups = groups.keys.toList()..sort();
 
-        PondGrid(
-          ponds: [
-            ['A1', 80, 1800, 2250, Colors.orange],
-            ['A2', 93, 2100, 2250, Colors.red],
-            ['A3', 67, 1500, 2250, Colors.blue],
-            ['A4', 0, 0, 2250, Colors.green],
-            ['A5', 0, 0, 2250, Colors.green],
-            ['A6', 0, 0, 2250, Colors.green],
-          ],
-        ),
+        return RefreshIndicator(
+          onRefresh: () async => _refresh(),
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              // ── Occupation globale ──────────────────────────────────
+              _GlobalCard(
+                percent: globalPercent,
+                totalFish: totalFish,
+                totalCapacity: totalCapacity,
+              ),
 
-        SizedBox(height: 20),
+              const SizedBox(height: 18),
 
-        // =========================
-        // ETANGS B
-        // =========================
-        SectionTitle(
-          title: 'Étangs B - 600 m²',
-          color: Colors.green,
-        ),
+              // ── Règle de densité ────────────────────────────────────
+              const _DensityCard(),
 
-        SizedBox(height: 12),
+              const SizedBox(height: 20),
 
-        PondGrid(
-          ponds: [
-            ['B1', 80, 1200, 1500, Colors.orange],
-            ['B2', 0, 0, 1500, Colors.green],
-            ['B3', 0, 0, 1500, Colors.green],
-            ['B4', 0, 0, 1500, Colors.green],
-            ['B5', 0, 0, 1500, Colors.green],
-          ],
-        ),
+              // ── Sections par groupe ─────────────────────────────────
+              ...sortedGroups.map((group) {
+                final groupPonds = groups[group]!;
+                final areaM2 =
+                    int.tryParse(groupPonds.first['area_m2'].toString()) ?? 0;
 
-        SizedBox(height: 20),
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _SectionTitle(
+                      title: 'Étangs $group - $areaM2 m²',
+                      color: _groupColor(group),
+                    ),
+                    const SizedBox(height: 12),
+                    GridView.builder(
+                      itemCount: groupPonds.length,
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 3,
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 12,
+                        childAspectRatio: 0.80,
+                      ),
+                      itemBuilder: (context, i) {
+                        final pond = groupPonds[i];
+                        final current = int.tryParse(
+                                pond['current_fish_count'].toString()) ??
+                            0;
+                        final max =
+                            int.tryParse(pond['max_capacity'].toString()) ?? 0;
+                        final double percent =
+                            max > 0 ? (current / max) * 100 : 0;
+                        return _PondCard(
+                          pondId: pond['id'].toString(),
+                          name: pond['name'] ?? '${group}${i + 1}',
+                          percent: percent,
+                          current: current,
+                          max: max,
+                          color: _colorForPercent(percent),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 20),
+                  ],
+                );
+              }),
 
-        // =========================
-        // ETANGS C
-        // =========================
-        SectionTitle(
-          title: 'Étangs C - 150 m²',
-          color: Colors.green,
-        ),
-
-        SizedBox(height: 12),
-
-        PondGrid(
-          ponds: [
-            ['C1', 80, 300, 375, Colors.orange],
-            ['C2', 0, 0, 375, Colors.green],
-            ['C3', 0, 0, 375, Colors.green],
-          ],
-        ),
-
-        SizedBox(height: 20),
-
-        // =========================
-        // ETANGS D
-        // =========================
-        SectionTitle(
-          title: 'Étangs D - 400 m²',
-          color: Colors.indigo,
-        ),
-
-        SizedBox(height: 12),
-
-        PondGrid(
-          ponds: [
-            ['D1', 0, 0, 1000, Colors.green],
-            ['D2', 0, 0, 1000, Colors.green],
-          ],
-        ),
-
-        SizedBox(height: 20),
-      ],
+              // ── Barrage ─────────────────────────────────────────────
+              if (barrages.isNotEmpty) ...[
+                const _SectionTitle(
+                  title: 'Barrage',
+                  color: Colors.indigo,
+                ),
+                const SizedBox(height: 12),
+                GridView.builder(
+                  itemCount: barrages.length,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                    childAspectRatio: 0.80,
+                  ),
+                  itemBuilder: (context, i) {
+                    final pond = barrages[i];
+                    final current =
+                        int.tryParse(pond['current_fish_count'].toString()) ??
+                            0;
+                    final max =
+                        int.tryParse(pond['max_capacity'].toString()) ?? 0;
+                    final double percent = max > 0 ? (current / max) * 100 : 0;
+                    return _PondCard(
+                      pondId: pond['id'].toString(),
+                      name: pond['name'] ?? 'Barrage',
+                      percent: percent,
+                      current: current,
+                      max: max,
+                      color: _colorForPercent(percent),
+                    );
+                  },
+                ),
+                const SizedBox(height: 20),
+              ],
+            ],
+          ),
+        );
+      },
     );
+  }
+
+  Color _groupColor(String group) {
+    switch (group) {
+      case 'A':
+        return Colors.blue;
+      case 'B':
+        return Colors.green;
+      case 'C':
+        return Colors.teal;
+      case 'D':
+        return Colors.indigo;
+      default:
+        return Colors.grey;
+    }
   }
 }
 
 // ─── Carte Globale ───────────────────────────────────────────────────────────
-class GlobalCard extends StatelessWidget {
-  const GlobalCard({super.key});
+
+class _GlobalCard extends StatelessWidget {
+  final double percent;
+  final int totalFish;
+  final int totalCapacity;
+
+  const _GlobalCard({
+    required this.percent,
+    required this.totalFish,
+    required this.totalCapacity,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final Color color = percent >= 90
+        ? Colors.red
+        : percent >= 70
+            ? Colors.orange
+            : Colors.green;
+
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -137,10 +256,7 @@ class GlobalCard extends StatelessWidget {
         children: [
           const Text(
             "Taux d'occupation global",
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 18),
           SizedBox(
@@ -153,20 +269,18 @@ class GlobalCard extends StatelessWidget {
                   width: 100,
                   height: 100,
                   child: CircularProgressIndicator(
-                    value: 0.24,
+                    value: percent / 100,
                     strokeWidth: 9,
                     strokeCap: StrokeCap.round,
                     backgroundColor: const Color(0xFFEAEAEA),
-                    valueColor: const AlwaysStoppedAnimation<Color>(
-                      Colors.green,
-                    ),
+                    valueColor: AlwaysStoppedAnimation<Color>(color),
                   ),
                 ),
-                const Text(
-                  '24%',
+                Text(
+                  '${percent.toStringAsFixed(1)}%',
                   style: TextStyle(
-                    color: Colors.green,
-                    fontSize: 24,
+                    color: color,
+                    fontSize: 22,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -174,19 +288,14 @@ class GlobalCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 14),
-          const Text(
-            '6900 poissons au total',
-            style: TextStyle(
-              fontSize: 18,
-              color: Colors.grey,
-            ),
+          Text(
+            '$totalFish poissons au total',
+            style: const TextStyle(fontSize: 18, color: Colors.grey),
           ),
           const SizedBox(height: 4),
-          const Text(
-            'Capacité totale: 26375 poissons',
-            style: TextStyle(
-              color: Colors.grey,
-            ),
+          Text(
+            'Capacité totale : $totalCapacity poissons',
+            style: const TextStyle(color: Colors.grey),
           ),
         ],
       ),
@@ -195,8 +304,9 @@ class GlobalCard extends StatelessWidget {
 }
 
 // ─── Règle de Densité ────────────────────────────────────────────────────────
-class DensityCard extends StatelessWidget {
-  const DensityCard({super.key});
+
+class _DensityCard extends StatelessWidget {
+  const _DensityCard();
 
   @override
   Widget build(BuildContext context) {
@@ -211,32 +321,19 @@ class DensityCard extends StatelessWidget {
         children: [
           Text(
             'Règle de densité',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           SizedBox(height: 10),
-          Text(
-            '• Densité max: 2,5 poissons/m²',
-            style: TextStyle(color: Colors.blue),
-          ),
-          Text(
-            '• Étang 900 m² → max 2250 poissons',
-            style: TextStyle(color: Colors.blue),
-          ),
-          Text(
-            '• Étang 600 m² → max 1500 poissons',
-            style: TextStyle(color: Colors.blue),
-          ),
-          Text(
-            '• Étang 150 m² → max 375 poissons',
-            style: TextStyle(color: Colors.blue),
-          ),
-          Text(
-            '• Étang 400 m² → max 1000 poissons',
-            style: TextStyle(color: Colors.blue),
-          ),
+          Text('• Densité max : 2,5 poissons/m²',
+              style: TextStyle(color: Colors.blue)),
+          Text('• Étang 900 m² → max 2250 poissons',
+              style: TextStyle(color: Colors.blue)),
+          Text('• Étang 600 m² → max 1500 poissons',
+              style: TextStyle(color: Colors.blue)),
+          Text('• Étang 150 m² → max 375 poissons',
+              style: TextStyle(color: Colors.blue)),
+          Text('• Étang 400 m² → max 1000 poissons',
+              style: TextStyle(color: Colors.blue)),
         ],
       ),
     );
@@ -244,74 +341,34 @@ class DensityCard extends StatelessWidget {
 }
 
 // ─── Titre Section ───────────────────────────────────────────────────────────
-class SectionTitle extends StatelessWidget {
+
+class _SectionTitle extends StatelessWidget {
   final String title;
   final Color color;
 
-  const SectionTitle({
-    super.key,
-    required this.title,
-    required this.color,
-  });
+  const _SectionTitle({required this.title, required this.color});
 
   @override
   Widget build(BuildContext context) {
     return Text(
       title,
-      style: TextStyle(
-        color: color,
-        fontWeight: FontWeight.bold,
-        fontSize: 20,
-      ),
+      style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 20),
     );
   }
 }
 
-// ─── Grille des Étangs ───────────────────────────────────────────────────────
-class PondGrid extends StatelessWidget {
-  final List<List<dynamic>> ponds;
+// ─── Carte Étang ─────────────────────────────────────────────────────────────
 
-  const PondGrid({
-    super.key,
-    required this.ponds,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GridView.builder(
-      itemCount: ponds.length,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-        childAspectRatio: 0.80,
-      ),
-      itemBuilder: (context, index) {
-        final pond = ponds[index];
-        return PondCard(
-          name: pond[0],
-          percent: pond[1],
-          current: pond[2],
-          max: pond[3],
-          color: pond[4],
-        );
-      },
-    );
-  }
-}
-
-// ─── Carte Étang Unitaire ────────────────────────────────────────────────────
-class PondCard extends StatelessWidget {
+class _PondCard extends StatelessWidget {
+  final String pondId;
   final String name;
-  final int percent;
+  final double percent;
   final int current;
   final int max;
   final Color color;
 
-  const PondCard({
-    super.key,
+  const _PondCard({
+    required this.pondId,
     required this.name,
     required this.percent,
     required this.current,
@@ -321,51 +378,51 @@ class PondCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 6,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            name,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
+    // Afficher juste le code court : "Étang A1" → "A1"
+    final shortName = name.replaceAll('Étang ', '');
+
+    return GestureDetector(
+      onTap: () => context.push('/pond/$pondId'),
+      child: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 6,
+              offset: const Offset(0, 4),
             ),
-          ),
-          const SizedBox(height: 8),
-          OccupationGauge(
-            percent: percent.toDouble(),
-            color: color,
-            size: 52,
-            strokeWidth: 5,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '$current/$max',
-            style: const TextStyle(
-              color: Colors.grey,
-              fontSize: 10,
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              shortName,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
-          ),
-        ],
+            const SizedBox(height: 8),
+            OccupationGauge(
+              percent: percent,
+              color: color,
+              size: 52,
+              strokeWidth: 5,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '$current/$max',
+              style: const TextStyle(color: Colors.grey, fontSize: 10),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
-// ─── Page Wrapper (Scaffold + AppBar) ────────────────────────────────────────
+// ─── Page Wrapper ─────────────────────────────────────────────────────────────
 
 class OccupancyPage extends StatelessWidget {
   const OccupancyPage({super.key});
@@ -383,7 +440,7 @@ class OccupancyPage extends StatelessWidget {
             Icon(Icons.set_meal, color: Color(0xFF1565C0), size: 26),
             SizedBox(width: 6),
             Text(
-              'AquaTrack',
+              'Divine alimentation',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 color: Color(0xFF1565C0),
@@ -393,12 +450,9 @@ class OccupancyPage extends StatelessWidget {
           ],
         ),
         actions: [
+          const NotificationBell(iconColor: Colors.black87),
           IconButton(
-            icon: const Icon(Icons.notifications_none, color: Colors.black87),
-            onPressed: () {},
-          ),
-          IconButton(
-            icon: const Icon(Icons.settings_outlined, color: Colors.white),
+            icon: const Icon(Icons.settings_outlined, color: Colors.black87),
             onPressed: () => context.push('/settings'),
           ),
         ],

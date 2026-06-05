@@ -2,59 +2,90 @@
 // ChangeNotifier central de l'app. Injecté dans main.dart via ChangeNotifierProvider.
 // Gère la liste des tâches, des étangs, la géolocalisation et notifie les widgets dépendants.
 
-import 'package:flutter/material.dart'; // Accès au type Color et à ChangeNotifier
+import 'package:flutter/material.dart';
 import '../task.dart';
 import '../models/pond.dart';
-import '../../core/services/geo_service.dart'; // Import de ton nouveau service géo
-import '../../core/services/api_service.dart';
+import '../../core/services/geo_service.dart';
+import '../../services/api_service.dart';
 
 class AppProvider extends ChangeNotifier {
-  // Permissions utilisateur – à remplacer par un vrai système d'auth plus tard.
-  final bool canEnterData = true;
-  final bool isAdmin = false;
+  // ==========================================
+  // 👤 RÔLE & UTILISATEUR
+  // ==========================================
+  String? _userRole;
+  String? _username;
+
+  String? get userRole => _userRole;
+  String? get username => _username;
+
+  // Ajoute cette variable avec les autres
+  int? _userId;
+  int? get userId => _userId;
+
+  /// true si le rôle permet la saisie (employé de terrain ou admin)
+  bool get canEnterData =>
+      _userRole == 'admin' || _userRole == 'employee' || _userRole == 'viewer';
+
+  /// true uniquement pour les admins
+  bool get isAdmin => _userRole == 'admin';
+
+  /// Charge le profil de l'utilisateur connecté depuis /auth/me
+  Future<void> loadUser() async {
+    try {
+      final payload = ApiService.decodeToken();
+      if (payload != null) {
+        _userRole = payload['role'] as String?;
+        _username = payload['username'] as String?;
+        _userId = payload['id'] as int?;
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Erreur décodage token : $e');
+    }
+  }
+
+  /// Réinitialise les données utilisateur lors de la déconnexion
+  void resetUser() {
+    _userRole = null;
+    _username = null;
+    _tasks = [];
+    notifyListeners();
+  }
 
   // ==========================================
   // 🛰️ GÉOLOCALISATION & PERMISSIONS
   // ==========================================
-  bool _isOnSite = false; // état initial : pas sur le site de la ferme
-  bool _isLoadingLocation =
-      false; // permet d'afficher un indicateur de chargement si besoin
+  bool _isOnSite = false;
+  bool _isLoadingLocation = false;
 
-  // Getters publics pour accéder à l'état depuis tes composants/écrans
   bool get isOnSite => _isOnSite;
   bool get isLoadingLocation => _isLoadingLocation;
 
-  /// Vérifie si l'utilisateur se trouve actuellement sur le site de la ferme
-  /// et met à jour l'état de l'application si nécessaire.
   Future<void> checkLocation() async {
     _isLoadingLocation = true;
-    notifyListeners(); // On notifie pour l'état de chargement
+    notifyListeners();
 
     try {
-      // Appel asynchrone de la logique de calcul de distance et de permissions
       final bool result = await GeoService.checkIfOnSite();
-
       if (_isOnSite != result) {
         _isOnSite = result;
       }
     } catch (e) {
-      // Sécurité : si le GPS ou les permissions plantent, on considère que l'utilisateur est hors-site
       debugPrint("Erreur lors de la vérification GPS dans AppProvider: $e");
       _isOnSite = false;
     } finally {
       _isLoadingLocation = false;
-      notifyListeners(); // Mise à jour de l'interface (ex: AppBar, validation de tâche)
+      notifyListeners();
     }
   }
 
-  /// Réinitialise manuellement le statut de la localisation
   void resetLocation() {
     _isOnSite = false;
     notifyListeners();
   }
 
   // ==========================================
-  // 🐟 DONNÉES DES ÉTANGS (Ajouté pour Grâce)
+  // 🐟 DONNÉES DES ÉTANGS
   // ==========================================
   final List<Pond> _ponds = [
     Pond(
@@ -85,13 +116,12 @@ class AppProvider extends ChangeNotifier {
 
   List<Pond> get ponds => _ponds;
 
-  /// 🔍 Cherche un étang par son nom (utilisé par GoRouter via /pond/:id)
   Pond? getPondByName(String name) {
     try {
       return _ponds
           .firstWhere((pond) => pond.name.toLowerCase() == name.toLowerCase());
     } catch (e) {
-      return null; // Retourne null si l'étang n'existe pas
+      return null;
     }
   }
 
@@ -105,26 +135,27 @@ class AppProvider extends ChangeNotifier {
   bool get isLoadingTasks => _isLoadingTasks;
   String? get tasksError => _tasksError;
 
-  /// Retourne une copie mutable de la liste (pour que le tri externe n'affecte pas _tasks)
   List<Task> get tasks => List.of(_tasks);
 
-  /// Charge les tâches depuis GET /tasks et notifie les listeners.
   Future<void> loadTasks() async {
     _isLoadingTasks = true;
     _tasksError = null;
     notifyListeners();
     try {
-      _tasks = await ApiService.fetchTasks();
+      final raw = await ApiService.fetchTasks(
+        assignedTo: _userRole == 'employee' ? _userId?.toString() : null,
+      );
+      _tasks = raw
+          .map((json) => Task.fromJson(json as Map<String, dynamic>))
+          .toList();
     } catch (e) {
       _tasksError = e.toString();
-      debugPrint('Erreur chargement tâches : $e');
     } finally {
       _isLoadingTasks = false;
       notifyListeners();
     }
   }
 
-  /// Retourne les tâches dont la date est dans la semaine commençant à [weekStart].
   List<Task> getTasksForWeek(DateTime weekStart) {
     final weekEnd = weekStart.add(const Duration(days: 7));
     return _tasks
@@ -134,7 +165,6 @@ class AppProvider extends ChangeNotifier {
         .toList();
   }
 
-  /// Met à jour le statut d'une tâche et notifie les listeners.
   void updateTaskStatus(String id, TaskStatus status) {
     final index = _tasks.indexWhere((t) => t.id == id);
     if (index != -1) {
@@ -143,7 +173,6 @@ class AppProvider extends ChangeNotifier {
     }
   }
 
-  /// Supprime une tâche par son id et notifie les listeners.
   void deleteTask(String id) {
     _tasks.removeWhere((t) => t.id == id);
     notifyListeners();

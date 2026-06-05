@@ -5,11 +5,12 @@ import 'package:flutter/foundation.dart';
 class GeoService {
 // Coordonnées de la ferme
 
+
   static const double _farmLat = 6.818500;
   static const double _farmLng = -3.426028;
   static const double _maxDistance = 500; // mètres
 
-  static Future<bool> checkIfOnSite() async { 
+  static Future<bool> checkIfOnSite() async {
     bool serviceEnabled;
     LocationPermission permission;
     // En mode debug, on considère que l'utilisateur est toujours sur le site pour faciliter les tests.
@@ -57,6 +58,8 @@ class GeoService {
         _farmLat,
         _farmLng,
       );
+      debugPrint(
+          '📏 Tu es à ${distanceInMeters.toStringAsFixed(2)} mètres du point cible.');
 
       return distanceInMeters <= _maxDistance;
     } catch (e) {

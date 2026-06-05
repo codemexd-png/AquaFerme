@@ -19,7 +19,7 @@ class _SplashViewState extends State<SplashView> with TickerProviderStateMixin {
     super.initState();
 
     // Redirection vers login après 4 secondes
-    Future.delayed(const Duration(seconds: 5), () {
+    Future.delayed(const Duration(seconds: 4), () {
       if (mounted) context.go('/login');
     });
 
@@ -293,9 +293,9 @@ class _SplashViewState extends State<SplashView> with TickerProviderStateMixin {
 
                   SizedBox(height: size.height * 0.04),
 
-                  // ─── AquaTrack ──────────────────────────────────────────
+                  // ─── Divine alimentation ──────────────────────────────────────────
                   const Text(
-                    'AquaTrack',
+                    'Divine alimentation',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 36,

@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
-// Import de ton fournisseur d'état
 import '../providers/app_providers.dart';
-// Widget réutilisable conservé
 import '../../widgets/stat_card.dart';
+import '../../services/api_service.dart';
+import '../task.dart';
+import '../../widgets/notification_bell.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -15,48 +16,53 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  late Future<Map<String, dynamic>> _statsFuture;
+
   @override
   void initState() {
     super.initState();
-    // Lance la vérification GPS dès que le premier rendu de l'écran est prêt
+    _statsFuture = ApiService.getDashboardStats();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<AppProvider>().checkLocation();
+      final provider = context.read<AppProvider>();
+      provider.checkLocation();
+      provider.loadTasks();
     });
+  }
+
+  void _refresh() {
+    setState(() {
+      _statsFuture = ApiService.getDashboardStats();
+    });
+    context.read<AppProvider>().loadTasks();
   }
 
   @override
   Widget build(BuildContext context) {
-    // On écoute en temps réel l'état de géolocalisation géré par le AppProvider
     final appProvider = context.watch<AppProvider>();
     final bool isOnSite = appProvider.isOnSite;
     final bool isLoadingGPS = appProvider.isLoadingLocation;
 
+    // Tâches du jour depuis le provider
+    final today = DateTime.now();
+    final todayTasks = appProvider.tasks.where((t) {
+      return t.scheduledDate.day == today.day &&
+          t.scheduledDate.month == today.month &&
+          t.scheduledDate.year == today.year;
+    }).toList();
+
     return Scaffold(
       backgroundColor: const Color(0xFFF4F8FB),
-
-      // =========================
-      // BARRE DU HAUT
-      // =========================
       appBar: AppBar(
         automaticallyImplyLeading: false,
         backgroundColor: const Color(0xFF0D47A1),
-        centerTitle: true,
-        title: const Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.set_meal, color: Colors.lightBlueAccent),
-            SizedBox(width: 8),
-            Text(
-              'AquaTrack',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
+        title: const Text(
+          'D Alimentation',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         actions: [
-          // Icône de statut de géolocalisation dynamique
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 16.0),
             child: isLoadingGPS
@@ -73,117 +79,161 @@ class _HomeScreenState extends State<HomeScreen> {
                     color: isOnSite ? Colors.greenAccent : Colors.redAccent,
                   ),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 4),
+          const NotificationBell(iconColor: Colors.white),
+          IconButton(
+            icon: const Icon(Icons.refresh, color: Colors.white),
+            onPressed: _refresh,
+          ),
           IconButton(
             icon: const Icon(Icons.settings, color: Colors.white),
             onPressed: () => context.push('/settings'),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 4),
         ],
       ),
-
-      // =========================
-      // CONTENU DE LA PAGE
-      // =========================
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // La bannière d'avertissement s'affiche uniquement si l'utilisateur n'est pas sur le site
           if (!isOnSite && !isLoadingGPS) ...[
             _warningGps(),
             const SizedBox(height: 22),
           ],
 
-          const Text(
-            'Bonjour, Ibrahima', // Nom mis à jour automatiquement
-            style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+          // ── Titre de bienvenue ──────────────────────────────────────
+          Consumer<AppProvider>(
+            builder: (context, provider, _) => Text(
+              'Bonjour, ${provider.username ?? ''}',
+              style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+            ),
           ),
-
           const SizedBox(height: 5),
-
           const Text(
             'Résumé de votre ferme piscicole',
             style: TextStyle(color: Colors.grey, fontSize: 15),
           ),
-
           const SizedBox(height: 22),
 
-          // =========================
-          // CARTES STATISTIQUES
-          // =========================
-          GridView.count(
-            crossAxisCount: 2,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisSpacing: 14,
-            mainAxisSpacing: 14,
-            childAspectRatio: 1.0,
-            children: const [
-              StatCard(
-                icon: Icons.set_meal,
-                value: '6900',
-                title: 'Total poissons',
-                color: Colors.blue,
-              ),
-              StatCard(
-                icon: Icons.waves,
-                value: '5/17',
-                title: 'Étangs actifs',
-                color: Colors.teal,
-              ),
-              StatCard(
-                icon: Icons.pie_chart,
-                value: '23.5%',
-                title: 'Occupation moy.',
-                color: Colors.green,
-              ),
-              StatCard(
-                icon: Icons.water_drop,
-                value: '5000',
-                title: 'Barrage',
-                color: Colors.indigo,
-              ),
-            ],
+          // ── Stats dynamiques ────────────────────────────────────────
+          FutureBuilder<Map<String, dynamic>>(
+            future: _statsFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const SizedBox(
+                  height: 180,
+                  child: Center(child: CircularProgressIndicator()),
+                );
+              }
+              if (snapshot.hasError) {
+                return SizedBox(
+                  height: 100,
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          '${snapshot.error}',
+                          style:
+                              const TextStyle(color: Colors.red, fontSize: 11),
+                          textAlign: TextAlign.center,
+                        ),
+                        TextButton.icon(
+                          onPressed: _refresh,
+                          icon: const Icon(Icons.refresh),
+                          label: const Text('Réessayer'),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }
+
+              final data = snapshot.data!;
+              final totalFish = data['total_fish']?.toString() ?? '—';
+              final activePonds = data['active_ponds']?.toString() ?? '—';
+              final totalPonds = data['total_ponds']?.toString() ?? '—';
+              final avgOccupation = data['avg_occupation'] != null
+                  ? '${data['avg_occupation']}%'
+                  : '—';
+              final barrageFish = data['barrage_fish']?.toString() ?? '—';
+
+              return GridView.count(
+                crossAxisCount: 2,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                crossAxisSpacing: 14,
+                mainAxisSpacing: 14,
+                childAspectRatio: 1.0,
+                children: [
+                  StatCard(
+                    icon: Icons.set_meal,
+                    value: totalFish,
+                    title: 'Total poissons',
+                    color: Colors.blue,
+                  ),
+                  StatCard(
+                    icon: Icons.waves,
+                    value: '$activePonds/$totalPonds',
+                    title: 'Étangs actifs',
+                    color: Colors.teal,
+                  ),
+                  StatCard(
+                    icon: Icons.pie_chart,
+                    value: avgOccupation,
+                    title: 'Occupation moy.',
+                    color: Colors.green,
+                  ),
+                  StatCard(
+                    icon: Icons.water_drop,
+                    value: barrageFish,
+                    title: 'Barrage',
+                    color: Colors.indigo,
+                  ),
+                ],
+              );
+            },
           ),
 
           const SizedBox(height: 25),
 
-          // =========================
-          // TÂCHES DU JOUR
-          // =========================
+          // ── Tâches du jour ──────────────────────────────────────────
           const Text(
             'Tâches du jour',
             style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
           ),
-
           const SizedBox(height: 12),
 
-          const _TaskCard(
-            title: 'Pêche de contrôle A5',
-            subtitle: 'Vérifier la densité et le poids moyen',
-            priority: 'Haute',
-            color: Colors.orange,
-          ),
-
-          const SizedBox(height: 12),
-
-          const _TaskCard(
-            title: 'Mesure qualité eau - Étangs B',
-            subtitle: 'Relever O₂, température et couleur',
-            priority: 'Moyenne',
-            color: Colors.blue,
-          ),
+          if (appProvider.isLoadingTasks)
+            const Center(child: CircularProgressIndicator())
+          else if (todayTasks.isEmpty)
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.event_available,
+                      color: Colors.grey[400], size: 28),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Aucune tâche prévue aujourd\'hui',
+                    style: TextStyle(color: Colors.grey[500]),
+                  ),
+                ],
+              ),
+            )
+          else
+            ...todayTasks.map((task) => _TaskCard(task: task)),
 
           const SizedBox(height: 25),
 
-          // =========================
-          // ACCÈS RAPIDE
-          // =========================
+          // ── Accès rapide ────────────────────────────────────────────
           const Text(
             'Accès rapide',
             style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
           ),
-
           const SizedBox(height: 14),
 
           GridView.count(
@@ -196,7 +246,7 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               _QuickCard(
                 title: 'Étangs A',
-                subtitle: '7 étangs • 900 m²',
+                subtitle: '8 étangs • 900 m²',
                 color: const Color(0xFF1976D2),
                 onTap: () => context.push('/pond-list?category=A'),
               ),
@@ -224,6 +274,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 color: const Color(0xFF1565C0),
                 onTap: () => context.push('/dam'),
               ),
+              _QuickCard(
+                title: 'Stock Aliments',
+                subtitle: 'Gérer les produits',
+                color: const Color(0xFF00897B),
+                onTap: () => context.push('/feed-stock'),
+              ),
             ],
           ),
 
@@ -233,9 +289,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // =========================
-  // MESSAGE GPS
-  // =========================
   Widget _warningGps() {
     return Container(
       padding: const EdgeInsets.all(14),
@@ -260,25 +313,32 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-// =========================
-// CARTE TÂCHE
-// =========================
-class _TaskCard extends StatelessWidget {
-  final String title;
-  final String subtitle;
-  final String priority;
-  final Color color;
+// ── Carte tâche du jour ───────────────────────────────────────────────────────
 
-  const _TaskCard({
-    required this.title,
-    required this.subtitle,
-    required this.priority,
-    required this.color,
-  });
+class _TaskCard extends StatelessWidget {
+  final Task task;
+  const _TaskCard({required this.task});
 
   @override
   Widget build(BuildContext context) {
+    Color color;
+    switch (task.priority) {
+      case TaskPriority.urgent:
+        color = Colors.red;
+        break;
+      case TaskPriority.high:
+        color = Colors.orange;
+        break;
+      case TaskPriority.medium:
+        color = Colors.blue;
+        break;
+      case TaskPriority.low:
+        color = Colors.grey;
+        break;
+    }
+
     return Container(
+      margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -301,11 +361,16 @@ class _TaskCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  title,
+                  task.title,
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
-                const SizedBox(height: 4),
-                Text(subtitle, style: const TextStyle(color: Colors.grey)),
+                if (task.description.isNotEmpty)
+                  Text(
+                    task.description,
+                    style: const TextStyle(color: Colors.grey),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
               ],
             ),
           ),
@@ -316,7 +381,7 @@ class _TaskCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
-              priority,
+              task.priorityLabel,
               style: TextStyle(
                 color: color,
                 fontWeight: FontWeight.bold,
@@ -330,9 +395,8 @@ class _TaskCard extends StatelessWidget {
   }
 }
 
-// =========================
-// CARTE ACCÈS RAPIDE
-// =========================
+// ── Carte accès rapide ────────────────────────────────────────────────────────
+
 class _QuickCard extends StatelessWidget {
   final String title;
   final String subtitle;

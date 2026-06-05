@@ -10,6 +10,7 @@ import '../task.dart';
 import 'add_task_screen.dart';
 import 'package:go_router/go_router.dart';
 import 'screen_shared.dart';
+import '../../widgets/notification_bell.dart';
 
 class PlanningScreen extends StatefulWidget {
   const PlanningScreen({super.key});
@@ -74,7 +75,7 @@ class _PlanningScreenState extends State<PlanningScreen>
         }
 
         final weekTasks = provider.getTasksForWeek(_selectedWeekStart);
-        final allTasks = provider.tasks
+        final allTasks = [...provider.tasks]
           ..sort((a, b) => a.scheduledDate.compareTo(b.scheduledDate));
 
         return Column(
@@ -163,26 +164,38 @@ class _PlanningScreenState extends State<PlanningScreen>
 
             // FAB area
             if (provider.canEnterData || provider.isAdmin)
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: ElevatedButton.icon(
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const AddTaskScreen()),
+              Consumer<AppProvider>(
+                builder: (context, appProvider, _) {
+                  if (appProvider.userRole == 'employee')
+                    return const SizedBox.shrink();
+                  return Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: ElevatedButton.icon(
+                        onPressed: () async {
+                          final created = await Navigator.push<bool>(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) => const AddTaskScreen()),
+                          );
+                          if (created == true && context.mounted) {
+                            context.read<AppProvider>().loadTasks();
+                          }
+                        },
+                        icon: const Icon(Icons.add),
+                        label: const Text('Ajouter une tâche'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF00897B),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                        ),
+                      ),
                     ),
-                    icon: const Icon(Icons.add),
-                    label: const Text('Ajouter une tâche'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF00897B),
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                    ),
-                  ),
-                ),
+                  );
+                },
               ),
           ],
         );
@@ -404,14 +417,6 @@ class _TaskCard extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             ListTile(
-              leading: const Icon(Icons.play_circle, color: Colors.blue),
-              title: const Text('Marquer en cours'),
-              onTap: () {
-                provider.updateTaskStatus(task.id, TaskStatus.inProgress);
-                Navigator.pop(ctx);
-              },
-            ),
-            ListTile(
               leading: const Icon(Icons.check_circle, color: Colors.green),
               title: const Text('Marquer terminé'),
               onTap: () {
@@ -420,18 +425,10 @@ class _TaskCard extends StatelessWidget {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.cancel, color: Colors.grey),
-              title: const Text('Annuler'),
+              leading: const Icon(Icons.pending, color: Colors.orange),
+              title: const Text('Remettre en attente'),
               onTap: () {
-                provider.updateTaskStatus(task.id, TaskStatus.cancelled);
-                Navigator.pop(ctx);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.delete, color: Colors.red),
-              title: const Text('Supprimer'),
-              onTap: () {
-                provider.deleteTask(task.id);
+                provider.updateTaskStatus(task.id, TaskStatus.pending);
                 Navigator.pop(ctx);
               },
             ),
@@ -460,7 +457,7 @@ class PlanningPage extends StatelessWidget {
             Icon(Icons.set_meal, color: Color(0xFF1565C0), size: 26),
             SizedBox(width: 6),
             Text(
-              'AquaTrack',
+              'Divine alimentation',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 color: Color(0xFF1565C0),
@@ -470,10 +467,7 @@ class PlanningPage extends StatelessWidget {
           ],
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_none, color: Colors.black87),
-            onPressed: () {},
-          ),
+          const NotificationBell(iconColor: Colors.black87),
           IconButton(
             icon: const Icon(Icons.settings_outlined,
                 color: Color.fromARGB(255, 10, 10, 10)),

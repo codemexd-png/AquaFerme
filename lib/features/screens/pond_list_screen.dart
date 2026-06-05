@@ -5,6 +5,7 @@ import 'package:provider/provider.dart'; // 🛰️ Import indispensable pour Co
 // Widget réutilisable conservé
 import '../../widgets/occupation_gauge.dart';
 import '../../features/providers/app_providers.dart'; // Ajuste le chemin selon ton dossier providers
+import '../../services/api_service.dart';
 
 class PondListScreen extends StatefulWidget {
   final String initialCategory;
@@ -20,189 +21,28 @@ class PondListScreen extends StatefulWidget {
 
 class _PondListScreenState extends State<PondListScreen> {
   late String selectedCategory;
-
-  // Liste temporaire locale sous forme de Maps
-  final List<Map<String, dynamic>> ponds = [
-    // ================= A =================
-    {
-      'name': 'Étang A1',
-      'category': 'A',
-      'surface': 900,
-      'fish': 1800,
-      'weight': 120.0,
-      'percent': 80.0,
-      'color': Colors.orange,
-    },
-    {
-      'name': 'Étang A2',
-      'category': 'A',
-      'surface': 900,
-      'fish': 2100,
-      'weight': 85.0,
-      'percent': 93.0,
-      'color': Colors.red,
-    },
-    {
-      'name': 'Étang A3',
-      'category': 'A',
-      'surface': 900,
-      'fish': 1500,
-      'weight': 200.0,
-      'percent': 67.0,
-      'color': Colors.blue,
-    },
-    {
-      'name': 'Étang A4',
-      'category': 'A',
-      'surface': 900,
-      'fish': 0,
-      'weight': 0.0,
-      'percent': 0.0,
-      'color': Colors.green,
-    },
-    {
-      'name': 'Étang A5',
-      'category': 'A',
-      'surface': 900,
-      'fish': 0,
-      'weight': 0.0,
-      'percent': 0.0,
-      'color': Colors.green,
-    },
-    {
-      'name': 'Étang A6',
-      'category': 'A',
-      'surface': 900,
-      'fish': 0,
-      'weight': 0.0,
-      'percent': 0.0,
-      'color': Colors.green,
-    },
-    {
-      'name': 'Étang A7',
-      'category': 'A',
-      'surface': 900,
-      'fish': 0,
-      'weight': 0.0,
-      'percent': 0.0,
-      'color': Colors.green,
-    },
-
-    // ================= B =================
-    {
-      'name': 'Étang B1',
-      'category': 'B',
-      'surface': 600,
-      'fish': 1200,
-      'weight': 110.0,
-      'percent': 80.0,
-      'color': Colors.orange,
-    },
-    {
-      'name': 'Étang B2',
-      'category': 'B',
-      'surface': 600,
-      'fish': 0,
-      'weight': 0.0,
-      'percent': 0.0,
-      'color': Colors.green,
-    },
-    {
-      'name': 'Étang B3',
-      'category': 'B',
-      'surface': 600,
-      'fish': 0,
-      'weight': 0.0,
-      'percent': 0.0,
-      'color': Colors.green,
-    },
-    {
-      'name': 'Étang B4',
-      'category': 'B',
-      'surface': 600,
-      'fish': 0,
-      'weight': 0.0,
-      'percent': 0.0,
-      'color': Colors.green,
-    },
-    {
-      'name': 'Étang B5',
-      'category': 'B',
-      'surface': 600,
-      'fish': 0,
-      'weight': 0.0,
-      'percent': 0.0,
-      'color': Colors.green,
-    },
-
-    // ================= C =================
-    {
-      'name': 'Étang C1',
-      'category': 'C',
-      'surface': 150,
-      'fish': 300,
-      'weight': 90.0,
-      'percent': 80.0,
-      'color': Colors.orange,
-    },
-    {
-      'name': 'Étang C2',
-      'category': 'C',
-      'surface': 150,
-      'fish': 0,
-      'weight': 0.0,
-      'percent': 0.0,
-      'color': Colors.green,
-    },
-    {
-      'name': 'Étang C3',
-      'category': 'C',
-      'surface': 150,
-      'fish': 0,
-      'weight': 0.0,
-      'percent': 0.0,
-      'color': Colors.green,
-    },
-
-    // ================= D =================
-    {
-      'name': 'Étang D1',
-      'category': 'D',
-      'surface': 400,
-      'fish': 0,
-      'weight': 0.0,
-      'percent': 0.0,
-      'color': Colors.green,
-    },
-    {
-      'name': 'Étang D2',
-      'category': 'D',
-      'surface': 400,
-      'fish': 0,
-      'weight': 0.0,
-      'percent': 0.0,
-      'color': Colors.green,
-    },
-  ];
+  late Future<List<dynamic>> pondsFuture;
 
   @override
   void initState() {
     super.initState();
     selectedCategory = widget.initialCategory;
+
+    // Appel API : GET /ponds
+    pondsFuture = ApiService.getPonds();
+  }
+
+  // Permet de relancer le chargement en cas d'erreur
+  void _retryLoading() {
+    setState(() {
+      pondsFuture = ApiService.getPonds();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final filteredPonds = selectedCategory == 'Tous'
-        ? ponds
-        : ponds.where((pond) => pond['category'] == selectedCategory).toList();
-
     return Scaffold(
       backgroundColor: const Color(0xFFF4F8FB),
-
-      // =========================
-      // APPBAR SANS FLÈCHE RETOUR
-      // =========================
       appBar: AppBar(
         automaticallyImplyLeading: false,
         backgroundColor: const Color(0xFF0D47A1),
@@ -213,17 +53,13 @@ class _PondListScreenState extends State<PondListScreen> {
             Icon(Icons.set_meal, color: Colors.lightBlueAccent),
             SizedBox(width: 8),
             Text(
-              'AquaTrack',
+              'Divine Alimentation',
               style:
                   TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
             ),
           ],
         ),
         actions: [
-          // ===================================================================
-          // ICÔNE DE LOCALISATION DYNAMIQUE
-          // Écoute l'état de la géolocalisation pour mettre à jour la vue globale
-          // ===================================================================
           Consumer<AppProvider>(
             builder: (context, provider, _) => Icon(
               provider.isOnSite ? Icons.location_on : Icons.location_off,
@@ -238,62 +74,137 @@ class _PondListScreenState extends State<PondListScreen> {
           const SizedBox(width: 12),
         ],
       ),
+      body: FutureBuilder<List<dynamic>>(
+        future: pondsFuture,
+        builder: (context, snapshot) {
+          // Chargement pendant l'appel API
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-      // =========================
-      // CONTENU
-      // =========================
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          // FILTRES
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                _filterButton('Tous'),
-                _filterButton('A'),
-                _filterButton('B'),
-                _filterButton('C'),
-                _filterButton('D'),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 18),
-
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                '${filteredPonds.length} étangs',
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
+          // Message d'erreur + bouton pour réessayer
+          if (snapshot.hasError) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.error_outline,
+                      color: Colors.red,
+                      size: 45,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Erreur : ${snapshot.error}',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton.icon(
+                      onPressed: _retryLoading,
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Réessayer'),
+                    ),
+                  ],
                 ),
               ),
-              Text(
-                '${filteredPonds.fold(0, (sum, p) => sum + (p['fish'] as int))} poissons',
-                style: const TextStyle(
-                  color: Colors.grey,
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 18),
-
-          ...filteredPonds.map((pond) {
-            return _PondCard(
-              name: pond['name'],
-              category: pond['category'],
-              surface: pond['surface'],
-              fish: pond['fish'],
-              weight: pond['weight'],
-              percent: pond['percent'],
-              color: pond['color'],
             );
-          }),
-        ],
+          }
+
+          final ponds = snapshot.data ?? [];
+
+          // Filtrage par secteur : A, B, C ou Barrage
+          final filteredPonds = selectedCategory == 'Tous'
+              ? ponds
+              : ponds
+                  .where((pond) => pond['pond_group'] == selectedCategory)
+                  .toList();
+
+          final int totalFish = filteredPonds.fold(
+            0,
+            (sum, pond) => sum + ((pond['current_fish_count'] ?? 0) as int),
+          );
+
+          return ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              // Filtres
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    _filterButton('Tous'),
+                    _filterButton('A'),
+                    _filterButton('B'),
+                    _filterButton('C'),
+
+                    // Correction demandée : D n'est plus utilisé ici
+                    _filterButton('Barrage'),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 18),
+
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '${filteredPonds.length} étangs',
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    '$totalFish poissons',
+                    style: const TextStyle(color: Colors.grey),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 18),
+
+              if (filteredPonds.isEmpty)
+                const Center(
+                  child: Padding(
+                    padding: EdgeInsets.only(top: 40),
+                    child: Text(
+                      'Aucun étang trouvé pour ce filtre.',
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  ),
+                ),
+
+              ...filteredPonds.map((pond) {
+                final int currentFish = pond['current_fish_count'] ?? 0;
+                final int maxCapacity = pond['max_capacity'] ?? 1;
+
+                final double percent =
+                    maxCapacity > 0 ? (currentFish / maxCapacity) * 100 : 0.0;
+
+                final Color color = percent >= 90
+                    ? Colors.red
+                    : percent >= 70
+                        ? Colors.orange
+                        : Colors.green;
+
+                return _PondCard(
+                  id: pond['id'].toString(),
+                  name: pond['name'] ?? '',
+                  category: pond['pond_group'] ?? '',
+                  surface: double.parse(pond['area_m2'].toString()).toInt(),
+                  fish: currentFish,
+                  weight: 0.0,
+                  percent: percent,
+                  color: color,
+                );
+              }),
+            ],
+          );
+        },
       ),
     );
   }
@@ -329,10 +240,8 @@ class _PondListScreenState extends State<PondListScreen> {
   }
 }
 
-// =========================
-// CARTE ÉTANG
-// =========================
 class _PondCard extends StatelessWidget {
+  final String id;
   final String name;
   final String category;
   final int surface;
@@ -342,6 +251,7 @@ class _PondCard extends StatelessWidget {
   final Color color;
 
   const _PondCard({
+    required this.id,
     required this.name,
     required this.category,
     required this.surface,
@@ -353,20 +263,14 @@ class _PondCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Si le backend envoie "Étang A1", on garde seulement "A1".
+    // Si le backend envoie déjà "A1", on garde "A1".
     final pondCode = name.replaceAll('Étang ', '');
 
     return InkWell(
       borderRadius: BorderRadius.circular(20),
       onTap: () {
-        context.push('/pond/$name', extra: {
-          'name': name,
-          'category': category,
-          'surface': surface,
-          'fish': fish,
-          'weight': weight,
-          'percent': percent,
-          'color': color,
-        });
+        context.push('/pond/$id');
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 14),
@@ -384,7 +288,6 @@ class _PondCard extends StatelessWidget {
         ),
         child: Row(
           children: [
-            // CODE A1, A2, B1...
             Container(
               width: 58,
               height: 58,
@@ -403,16 +306,13 @@ class _PondCard extends StatelessWidget {
                 ),
               ),
             ),
-
             const SizedBox(width: 14),
-
-            // INFOS
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    name,
+                    name.startsWith('Étang') ? name : 'Étang $name',
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 18,
@@ -425,7 +325,7 @@ class _PondCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Poids moy: ${weight.toStringAsFixed(1)} g • MAJ: 19/05',
+                    'Poids moy: ${weight.toStringAsFixed(1)} g',
                     style: const TextStyle(
                       color: Colors.grey,
                       fontSize: 12,
@@ -434,8 +334,6 @@ class _PondCard extends StatelessWidget {
                 ],
               ),
             ),
-
-            // POURCENTAGE EN ROND
             OccupationGauge(
               percent: percent,
               color: color,

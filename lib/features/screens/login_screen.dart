@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../services/api_service.dart';
+import 'package:provider/provider.dart';
+import '../providers/app_providers.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -21,7 +24,7 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void _handleLogin() {
+  Future<void> _handleLogin() async {
     if (_usernameController.text.isEmpty || _passwordController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -34,13 +37,39 @@ class _LoginScreenState extends State<LoginScreen> {
 
     setState(() => _isLoading = true);
 
-    // Simulation délai réseau — à remplacer par l'appel API
-    Future.delayed(const Duration(seconds: 1), () {
-      if (mounted) {
-        setState(() => _isLoading = false);
-        context.go('/home');
+    try {
+      final token = await ApiService.login(
+        _usernameController.text.trim(),
+        _passwordController.text.trim(),
+      );
+
+      if (token != null) {
+        if (context.mounted) {
+          await context.read<AppProvider>().loadUser();
+          context.go('/home');
+        }
+      } else {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Identifiants incorrects.'),
+              backgroundColor: Colors.redAccent,
+            ),
+          );
+        }
       }
-    });
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur de connexion : vérifiez le réseau.'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -107,7 +136,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                       // ─── Titre ───────────────────────────────────────
                       const Text(
-                        'AquaTrack',
+                        'Divine alimentation',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 28,

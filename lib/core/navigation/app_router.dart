@@ -19,6 +19,7 @@ import '../../features/screens/settings_Screen.dart';
 import '../../features/screens/login_screen.dart';
 import '../../features/screens/home_screen.dart';
 import '../../widgets/app_navigation.dart'; // à ajouter
+import '../../features/screens/feed_stock_screen.dart';
 
 final GoRouter appRouter = GoRouter(
   //Permet de démarrer l'application sur le SplashView, qui redirigera ensuite vers le LoginScreen après une courte pause.
@@ -37,8 +38,7 @@ final GoRouter appRouter = GoRouter(
       path: '/pond/:id',
       builder: (context, state) {
         final pondId = state.pathParameters['id']!;
-        final extra = state.extra as Map<String, dynamic>?;
-        return PondDetailScreen(pondId: pondId, pondData: extra);
+        return PondDetailScreen(pondId: pondId);
       },
     ),
     GoRoute(
@@ -65,7 +65,10 @@ final GoRouter appRouter = GoRouter(
       path: '/login',
       builder: (context, state) => const LoginScreen(),
     ),
-
+GoRoute(
+  path: '/feed-stock',
+  builder: (context, state) => const FeedStockScreen(),
+),
     // ─── Dans le shell (avec bottom nav) ─────────────────────────
     ShellRoute(
       builder: (context, state, child) => AppNavigation(child: child),

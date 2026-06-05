@@ -10,17 +10,12 @@ dependencies:
   flutter:
     sdk: flutter
 
-  # Navigation officielle recommandée
+  http: ^1.2.0
   go_router: ^14.0.0
-
-  # Gestion d'état pour les mocks locaux et le statut GPS
   provider: ^6.1.0
-
-  # Formatage des dates (planning)
   intl: ^0.19.0
 
-  # Requêtes HTTP vers le backend
-  http: ^1.2.0
+  
 
   # Géolocalisation & Permissions (Cœur de tes tâches de vendredi)
   geolocator: ^11.0.0

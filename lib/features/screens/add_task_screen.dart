@@ -1,14 +1,17 @@
 // ─── Écran Création de tâche ─────────────────────────────────────────────────
-// Formulaire permettant de créer une nouvelle tâche de planning.
-// Champ "Assigner à" : Autocomplete avec saisie libre et mémorisation des noms.
-// Ouvert via Navigator.push depuis PlanningScreen (pas via GoRouter : pas de route dédiée).
-
 import 'package:flutter/material.dart';
 import 'screen_shared.dart';
+import '../../services/api_service.dart';
 
-// ─── Écran Création de tâche ──────────────────────────────────────────────────
-
-const _categories = ['Pêche de contrôle', 'Qualité eau', 'Nutrition', 'Nettoyage', 'Transfert', 'Mortalité', 'Autre'];
+const _categories = [
+  'Pêche de contrôle',
+  'Qualité eau',
+  'Nutrition',
+  'Nettoyage',
+  'Transfert',
+  'Mortalité',
+  'Autre'
+];
 const _priorites = ['Haute', 'Moyenne', 'Basse'];
 
 class AddTaskScreen extends StatefulWidget {
@@ -19,15 +22,49 @@ class AddTaskScreen extends StatefulWidget {
 }
 
 class _AddTaskScreenState extends State<AddTaskScreen> {
-  String? _selectedEtang;
+  String? _selectedPondId;
   String? _selectedCategorie;
   String? _selectedPriorite;
   String? _selectedAgent;
+
   final _titreCtrl = TextEditingController();
   final _descCtrl = TextEditingController();
   final _dateCtrl = TextEditingController();
-  // Options mémorisées entre les utilisations (session en cours)
-  static final _agentOptions = <String>[];
+
+  List<dynamic> _users = [];
+  List<dynamic> _ponds = [];
+  bool _isLoadingUsers = false;
+  bool _isLoadingPonds = false;
+  bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUsers();
+    _loadPonds();
+  }
+
+  Future<void> _loadUsers() async {
+    setState(() => _isLoadingUsers = true);
+    final users = await ApiService.getUsers();
+    setState(() {
+      _users = users;
+      _isLoadingUsers = false;
+    });
+  }
+
+  Future<void> _loadPonds() async {
+    setState(() => _isLoadingPonds = true);
+    try {
+      final ponds = await ApiService.getPonds();
+      setState(() {
+        _ponds = ponds;
+        _isLoadingPonds = false;
+      });
+    } catch (_) {
+      setState(() => _isLoadingPonds = false);
+    }
+  }
 
   @override
   void dispose() {
@@ -50,6 +87,66 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     }
   }
 
+  // Convertit DD/MM/YYYY → YYYY-MM-DD pour le backend
+  String _convertDate(String ddmmyyyy) {
+    final parts = ddmmyyyy.split('/');
+    return '${parts[2]}-${parts[1]}-${parts[0]}';
+  }
+
+  Future<void> _createTask() async {
+    // Validation
+    if (_titreCtrl.text.trim().isEmpty) {
+      _showError('Le titre est obligatoire.');
+      return;
+    }
+    if (_selectedCategorie == null) {
+      _showError('Sélectionne une catégorie.');
+      return;
+    }
+    if (_dateCtrl.text.isEmpty) {
+      _showError('La date est obligatoire.');
+      return;
+    }
+    if (_selectedPriorite == null) {
+      _showError('Sélectionne une priorité.');
+      return;
+    }
+
+    setState(() => _isSaving = true);
+
+    try {
+      await ApiService.createTask(
+        title: _titreCtrl.text.trim(),
+        pondId: _selectedPondId,
+        taskDate: _convertDate(_dateCtrl.text),
+        priority: _selectedPriorite!.toLowerCase(),
+        assignedTo: _selectedAgent,
+        description:
+            _descCtrl.text.trim().isEmpty ? null : _descCtrl.text.trim(),
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Tâche créée avec succès ✓'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.pop(context, true); // true = refresh la liste
+      }
+    } catch (e) {
+      if (mounted) _showError('Erreur : $e');
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
+  }
+
+  void _showError(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg), backgroundColor: Colors.red),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -63,9 +160,9 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
         ),
         title: const Text(
           'Créer une tâche',
-          style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 16),
+          style: TextStyle(
+              color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 16),
         ),
-
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -91,13 +188,44 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                   onChanged: (v) => setState(() => _selectedCategorie = v),
                 ),
                 const SizedBox(height: 12),
-                _LabeledDropdown(
-                  label: 'Étang cible',
-                  icon: Icons.water_outlined,
-                  value: _selectedEtang,
-                  items: etangs.map((e) => 'Étang $e').toList(),
-                  hint: 'Sélectionner un étang',
-                  onChanged: (v) => setState(() => _selectedEtang = v),
+                // Étang cible — chargé depuis l'API
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.water_outlined,
+                            size: 16, color: Colors.grey[600]),
+                        const SizedBox(width: 6),
+                        Text('Étang cible (optionnel)',
+                            style: TextStyle(
+                                fontSize: 13, color: Colors.grey[700])),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    _isLoadingPonds
+                        ? const Center(child: CircularProgressIndicator())
+                        : DropdownButtonFormField<String>(
+                            value: _selectedPondId,
+                            decoration:
+                                screenInputDecoration('Sélectionner un étang'),
+                            items: [
+                              const DropdownMenuItem(
+                                value: null,
+                                child: Text('Aucun étang'),
+                              ),
+                              ..._ponds.map((pond) {
+                                return DropdownMenuItem<String>(
+                                  value: pond['id'].toString(),
+                                  child: Text(
+                                      pond['name'] ?? 'Étang ${pond['id']}'),
+                                );
+                              }),
+                            ],
+                            onChanged: (v) =>
+                                setState(() => _selectedPondId = v),
+                          ),
+                  ],
                 ),
               ],
             ),
@@ -114,9 +242,12 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.calendar_today_outlined, size: 16, color: Colors.grey[600]),
+                        Icon(Icons.calendar_today_outlined,
+                            size: 16, color: Colors.grey[600]),
                         const SizedBox(width: 6),
-                        Text('Date prévue', style: TextStyle(fontSize: 13, color: Colors.grey[700])),
+                        Text('Date prévue',
+                            style: TextStyle(
+                                fontSize: 13, color: Colors.grey[700])),
                       ],
                     ),
                     const SizedBox(height: 6),
@@ -124,8 +255,10 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                       controller: _dateCtrl,
                       readOnly: true,
                       onTap: _pickDate,
-                      decoration: screenInputDecoration('Ex: 21/05/2026').copyWith(
-                        suffixIcon: const Icon(Icons.calendar_month_outlined, color: Color(0xFF1565C0)),
+                      decoration:
+                          screenInputDecoration('Ex: 21/05/2026').copyWith(
+                        suffixIcon: const Icon(Icons.calendar_month_outlined,
+                            color: Color(0xFF1565C0)),
                       ),
                     ),
                   ],
@@ -145,35 +278,30 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.person_outline, size: 16, color: Colors.grey[600]),
+                        Icon(Icons.person_outline,
+                            size: 16, color: Colors.grey[600]),
                         const SizedBox(width: 6),
-                        Text('Assigner à', style: TextStyle(fontSize: 13, color: Colors.grey[700])),
+                        Text('Assigner à',
+                            style: TextStyle(
+                                fontSize: 13, color: Colors.grey[700])),
                       ],
                     ),
                     const SizedBox(height: 6),
-                    Autocomplete<String>(
-                      optionsBuilder: (TextEditingValue tv) {
-                        if (tv.text.isEmpty) return _agentOptions;
-                        return _agentOptions.where(
-                          (a) => a.toLowerCase().contains(tv.text.toLowerCase()),
-                        );
-                      },
-                      onSelected: (s) => setState(() => _selectedAgent = s),
-                      fieldViewBuilder: (context, ctrl, focusNode, onSubmitted) => TextField(
-                        controller: ctrl,
-                        focusNode: focusNode,
-                        decoration: screenInputDecoration('Ex: Ibrahim'),
-                        onChanged: (v) => setState(() => _selectedAgent = v),
-                        onSubmitted: (_) {
-                          final name = ctrl.text.trim();
-                          if (name.isNotEmpty && !_agentOptions.contains(name)) {
-                            _agentOptions.add(name);
-                          }
-                          setState(() => _selectedAgent = name);
-                          onSubmitted();
-                        },
-                      ),
-                    ),
+                    _isLoadingUsers
+                        ? const Center(child: CircularProgressIndicator())
+                        : DropdownButtonFormField<String>(
+                            value: _selectedAgent,
+                            decoration: screenInputDecoration(
+                                'Sélectionner un employé'),
+                            items: _users.map((user) {
+                              return DropdownMenuItem<String>(
+                                value: user['id'].toString(),
+                                child: Text(user['username']),
+                              );
+                            }).toList(),
+                            onChanged: (v) =>
+                                setState(() => _selectedAgent = v),
+                          ),
                   ],
                 ),
               ],
@@ -187,7 +315,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
             child: TextField(
               controller: _descCtrl,
               maxLines: 4,
-              decoration: screenInputDecoration('Détails de la tâche à effectuer...'),
+              decoration:
+                  screenInputDecoration('Détails de la tâche à effectuer...'),
             ),
           ),
           const SizedBox(height: 24),
@@ -199,13 +328,25 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
               style: FilledButton.styleFrom(
                 backgroundColor: const Color(0xFF1565C0),
                 padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10)),
               ),
-              onPressed: () {},
-              icon: const Icon(Icons.playlist_add_check_circle_outlined),
-              label: const Text('Créer la tâche', style: TextStyle(fontSize: 15)),
+              onPressed: _isSaving ? null : _createTask,
+              icon: _isSaving
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Icon(Icons.playlist_add_check_circle_outlined),
+              label: Text(
+                _isSaving ? 'Enregistrement...' : 'Créer la tâche',
+                style: const TextStyle(fontSize: 15),
+              ),
             ),
           ),
+          const SizedBox(height: 24),
         ],
       ),
     );
@@ -240,14 +381,17 @@ class _LabeledDropdown extends StatelessWidget {
           children: [
             Icon(icon, size: 16, color: Colors.grey[600]),
             const SizedBox(width: 6),
-            Text(label, style: TextStyle(fontSize: 13, color: Colors.grey[700])),
+            Text(label,
+                style: TextStyle(fontSize: 13, color: Colors.grey[700])),
           ],
         ),
         const SizedBox(height: 6),
         DropdownButtonFormField<String>(
           value: value,
           decoration: screenInputDecoration(hint),
-          items: items.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+          items: items
+              .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+              .toList(),
           onChanged: onChanged,
         ),
       ],
